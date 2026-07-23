@@ -1,0 +1,17 @@
+# Visual Studio
+.vs/
+
+# Build folders
+x64/
+Debug/
+Release/
+
+# Build output
+*.obj
+*.exe
+*.ilk
+*.idb
+*.pdb
+
+# User settings
+*.user
