@@ -1,0 +1,24 @@
+#pragma once
+#include "Character.h"
+
+
+struct DamagedEvent
+{
+	Character& attacker;
+	Character& target;
+
+	int damage;
+};
+
+struct HealedEvent
+{
+	Character& healer;
+	Character& target;
+
+	int healAmount;
+};
+
+struct DeadEvent
+{
+	Character& deadCharacter;
+};
