@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Mianibattle/Mianibattle.vcxproj" />
+  <Project Path="Mianibattle/Mianibattle.vcxproj" Id="6eb263e4-6719-44f0-bd0c-c34b08ee12ef" />
 </Solution>

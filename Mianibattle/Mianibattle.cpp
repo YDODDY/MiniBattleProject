@@ -5,16 +5,12 @@
 #include "BattleSystem.h"	
 #include "EventBus.h"
 #include "ConsoleLogSystem.h"
+#include "Game.h"
 
 int main()
 {
-	EventBus eventBus;
-	BattleSystem battleSystem(eventBus);
-	ConsoleLogSystem consoleLogSystem(eventBus);
-
-	Character player("Player", 100, 100);
-	Character enemy("Enemy", 30, 30);
-
+	Game game;
+	game.Run();
 	return 0;
 }
 
