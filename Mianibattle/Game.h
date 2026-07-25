@@ -12,6 +12,7 @@ public:
 	void Run();
 
 private:
+
 	EventBus eventBus; // 먼저 생성
 	BattleSystem battleSystem; // eventbus 참조 
 	ConsoleLogSystem consoleLogSystem; // eventbus 참조

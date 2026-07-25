@@ -1,6 +1,9 @@
 #include "Game.h"
 #include "Character.h"
+#include "Player.h"
+#include "Enemy.h"
 #include <iostream>
+#include "BattleAction.h"
 
 Game::Game() 
 	: battleSystem(eventBus), consoleLogSystem(eventBus)
@@ -10,8 +13,8 @@ Game::Game()
 
 void Game::Run()
 {
-	Character player("Player", 100, 100);
-	Character enemy("Enemy", 50, 50);
+	Player player("Player", 100, 100);
+	Enemy enemy("Enemy", 50, 50);
 
 	StartBattle(player, enemy);
 	RunBattleLoop(player, enemy);
@@ -48,11 +51,19 @@ void Game::StartBattle(Character& player, Character& enemy)
 void Game::RunBattleLoop(Character& player, Character& enemy)
 {
 	// 둘 다 살아있는 동안 반복
-	while (!player.IsDead() && !enemy.IsDead())
+	while (true)
 	{
+		BattleAction playerAction = player.ChooseAction();
+
+		battleSystem.ExecuteAction(playerAction, player, enemy);
+
 		// player 행동
 		if (CheckBattleEnd(player, enemy))
 			break;
+
+		BattleAction enemyAction = enemy.ChooseAction();
+
+		battleSystem.ExecuteAction(enemyAction, enemy, player);
 
 		// enemy 행동
 		if (CheckBattleEnd(player, enemy))

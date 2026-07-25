@@ -25,3 +25,20 @@ void BattleSystem::Heal(Character& character, int healAmount)
 
 	eventBus.Publish(HealedEvent{ character, character, appliedHealAmount });
 }
+
+void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Character& target)
+{
+	switch (action)
+	{
+		case BattleAction::Attack:
+			Attack(actor, target, 20);
+		break;
+	case BattleAction::Heal:
+		Heal(actor, 10);
+		break;
+
+	default:
+		break;
+	}
+	
+}

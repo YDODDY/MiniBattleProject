@@ -1,16 +1,23 @@
 #pragma once
 #include <iostream>
 #include <string>
+#include "BattleAction.h"
 
 class Character
 {
 
 public : 
+
 	Character(std::string inputName, int inputHp, int inputMaxHP)
 		: name(inputName), hp(inputHp), maxHp(inputMaxHP)
 	{
 	
 	}
+
+	virtual ~Character() = default;
+
+	virtual BattleAction ChooseAction() = 0;
+
 
 	int ReceiveDamage(int damage);
 	int Heal(int healAmount);
