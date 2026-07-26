@@ -34,7 +34,6 @@ bool Game::CheckBattleEnd(Character& player, Character& enemy)
 		battleResult = BattleResult::PlayerWin;
 		return true;
 	}
-
 	return false;
 }
 
@@ -53,6 +52,7 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 	// 둘 다 살아있는 동안 반복
 	while (true)
 	{
+		battleSystem.StartTurn(player);
 		BattleAction playerAction = player.ChooseAction();
 
 		battleSystem.ExecuteAction(playerAction, player, enemy);
@@ -61,6 +61,8 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 		if (CheckBattleEnd(player, enemy))
 			break;
 
+
+		battleSystem.StartTurn(enemy);
 		BattleAction enemyAction = enemy.ChooseAction();
 
 		battleSystem.ExecuteAction(enemyAction, enemy, player);

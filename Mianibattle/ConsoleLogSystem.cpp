@@ -23,6 +23,14 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 			OnDead(event);
 		}
 	);
+
+	eventBus.Subscribe<GuardEvent>(
+		[this](const GuardEvent& event)
+		{	
+			OnGuardAttack(event);
+		}
+	);
+		
 }
 
 void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
@@ -64,4 +72,11 @@ void ConsoleLogSystem::OnDead(const DeadEvent & event)
 	std::cout
 		<< event.deadCharacter.GetName()
 		<< " is dead!\n";
+}
+
+void ConsoleLogSystem::OnGuardAttack(const GuardEvent& event)
+{
+	std::cout
+		<< event.actor.GetName()
+		<< "Guarded " << event.attacker.GetName() << "'s Attack! \n";
 }

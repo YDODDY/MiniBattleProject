@@ -48,6 +48,22 @@ int Character::Heal(int healAmount)
 	return hp - previousHp;
 }
 
+void Character::StartGurding()
+{
+	if (isGuarding)
+		return;
+
+	isGuarding = true;
+}
+
+void Character::StopGuarding()
+{
+	if (!isGuarding)
+		return;
+
+	isGuarding = false;
+}
+
 bool Character::IsDead() const
 {
 	return hp <= 0;
@@ -61,4 +77,9 @@ std::string Character::GetName() const
 int Character::GetHp() const
 {
 	return hp;
+}
+
+bool Character::IsGuarding() const
+{
+	return isGuarding;
 }

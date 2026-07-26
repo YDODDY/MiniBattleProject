@@ -21,13 +21,17 @@ public :
 
 	int ReceiveDamage(int damage);
 	int Heal(int healAmount);
+	void Guard();
+	void UnGuard();
 	bool IsDead() const;
 	std::string GetName() const;
 	int GetHp() const;
+	bool IsGuarding() const;
 
 
 private: 
 	std::string name;
 	int hp;
 	int maxHp;
+	bool isGuarding = false;
 };

@@ -16,11 +16,12 @@ BattleAction Player::ChooseAction()
 
 		std::cout << "1. Attack\n";
 		std::cout << "2. Heal\n";
+		std::cout << "3. Guard\n";
 		std::cout << ">> ";
 
 		if (!(std::cin >> choice))
 		{
-			std::cout << "Only 1 or 2 Command is available. \n";
+			std::cout << "Only 1 or 2 or 3 Command is available. \n";
 
 			// cin fail 상태 해제
 			std::cin.clear();
@@ -45,8 +46,10 @@ BattleAction Player::ChooseAction()
 			return BattleAction::Attack;
 		case 2:
 			return BattleAction::Heal;
+		case 3:
+			return BattleAction::Guard;
 		default:
-			std::cout << "Only 1 or 2 Command is available. \n";
+			std::cout << "Only 1 or 2 or 3 Command is available. \n";
 			break;
 		}
 	}

@@ -20,11 +20,19 @@ public:
 
 	}
 
+	void StartTurn(Character& character);
+
 	void Attack(Character& attacker, Character& target, int damage);
 
 	void Heal(Character& character, int healAmount);
 
 	void ExecuteAction(BattleAction action, Character& actor, Character& target);
+
+	void Guard(Character& character);
+
+	void UnGuard(Character& character);
+
+	void HandleGuardedAttack(Character& attacker, Character& actor);
 
 private:
 

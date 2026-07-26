@@ -3,8 +3,23 @@
 #include "Event.h"
 #include <iostream>
 
+void BattleSystem::StartTurn(Character& character)
+{
+	if (character.IsGuarding())
+		character.StopGuarding();
+}
+
 void BattleSystem::Attack(Character& attacker, Character& target, int damage)
 {
+	if (target.IsDead())
+		return;
+
+	if (target.IsGuarding())
+	{	
+		HandleGuardedAttack(attacker, target);
+		return;
+	}
+
 	const bool wasAlive = !target.IsDead();
 	const int appliedDamage = target.ReceiveDamage(damage);
 
@@ -30,15 +45,42 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 {
 	switch (action)
 	{
-		case BattleAction::Attack:
-			Attack(actor, target, 20);
+	case BattleAction::Attack:
+		Attack(actor, target, 20);
 		break;
+
 	case BattleAction::Heal:
 		Heal(actor, 10);
+		break;
+
+	case BattleAction::Guard:
+		Guard(actor);
 		break;
 
 	default:
 		break;
 	}
 	
+}
+
+void BattleSystem::Guard(Character& character)
+{
+	if (!character.IsGuarding())
+	{
+		character.StartGurding();
+	}
+}
+
+void BattleSystem::UnGuard(Character& character)
+{
+	if (character.IsGuarding())
+	{
+		character.StopGuarding();
+	}
+}
+
+void BattleSystem::HandleGuardedAttack(Character& attacker, Character& defender)
+{
+	eventBus.Publish(GuardEvent{ attacker, defender });
+	defender.StopGuarding();
 }
