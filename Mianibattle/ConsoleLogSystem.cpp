@@ -30,7 +30,14 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 			OnGuardAttack(event);
 		}
 	);
-		
+	
+	eventBus.Subscribe<MissedEvent>(
+		[this](const MissedEvent& event)
+		{
+			OnMissedAttack(event);
+		}
+	);
+
 }
 
 void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
@@ -88,4 +95,42 @@ void ConsoleLogSystem::OnGuardAttack(const GuardEvent& event)
 	std::cout
 		<< event.defender.GetName()
 		<< "Guarded " << event.attacker.GetName() << "'s Attack! \n";
+}
+
+void ConsoleLogSystem::OnMissedAttack(const MissedEvent& event)
+{
+	std::cout << event.attacker.GetName() << "'s ";
+	if (event.isPowerAttack)
+	{
+		std::cout << "Power "; 
+	}
+	std::cout << "Attack to " << event.target.GetName() << " is Missed! \n";
+}
+
+void ConsoleLogSystem::OnCriticalDamaged(const CriticalDamagedEvent& event)
+{
+	std::cout << "[Critical Attack!]\n";
+
+	if (event.isPowerAttack)
+	{
+		std::cout << "[PowerAttack!]\n";
+
+		if (event.target.IsGuarding())
+			std::cout << event.target.GetName()
+			<< "'s Guarding is failed!\n";
+	}
+
+	std::cout
+		<< event.attacker.GetName()
+		<< " attacked "
+		<< event.target.GetName()
+		<< " for "
+		<< event.criticalDamage
+		<< " damage.\n";
+
+	std::cout
+		<< event.target.GetName()
+		<< " HP: "
+		<< event.target.GetHp()
+		<< '\n';
 }

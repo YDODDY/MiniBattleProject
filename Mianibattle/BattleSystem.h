@@ -34,6 +34,8 @@ public:
 
 	void HandleGuardedAttack(Character& attacker, Character& actor);
 
+	bool CheckItWasHit(Character& attacker, Character& target, bool isPowerAttack);
+
 private:
 
 	EventBus& eventBus;

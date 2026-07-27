@@ -29,3 +29,20 @@ struct GuardEvent
 	Character& attacker;
 	Character& defender;
 };
+
+struct MissedEvent
+{
+	Character& attacker;
+	Character& target;
+
+	bool isPowerAttack;
+};
+
+struct CriticalDamagedEvent
+{
+	Character& attacker;
+	Character& target;
+
+	int criticalDamage;
+	bool isPowerAttack;
+};

@@ -2,6 +2,7 @@
 #include "Character.h"
 #include "Event.h"
 #include <iostream>
+#include <random>
 
 void BattleSystem::StartTurn(Character& character)
 {
@@ -19,6 +20,18 @@ void BattleSystem::Attack(Character& attacker, Character& target, int damage, bo
 {
 	if (target.IsDead())
 		return;
+
+	if (!CheckItWasHit(attacker, target, isPowerAttack))
+	{
+		eventBus.Publish(MissedEvent{ attacker, target, isPowerAttack });
+		return;
+	}
+
+	if (CheckIsCritical(attacker, target, isPowerAttack))
+	{
+		HandleCriticalAttack(attacker, target, damage, isPowerAttack);
+		return;
+	}
 
 	if (target.IsGuarding() && !isPowerAttack)
 	{	
@@ -57,11 +70,11 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 	switch (action)
 	{
 	case BattleAction::Attack:
-		Attack(actor, target, 20, false);
+		Attack(actor, target, 5, false);
 		break;
 
 	case BattleAction::PowerAttack:
-		Attack(actor, target, 30, true);
+		Attack(actor, target, 10, true);
 		break;
 
 	case BattleAction::Heal:
@@ -98,5 +111,58 @@ void BattleSystem::HandleGuardedAttack(Character& attacker, Character& defender)
 {
 	eventBus.Publish(GuardEvent{ attacker, defender });
 	defender.StopGuarding();
+}
+
+bool BattleSystem::CheckItWasHit(Character& attacker, Character& target, bool isPowerAttack)
+{
+	int accuracyPercent = 90;
+	if (isPowerAttack)
+		accuracyPercent = 70;
+	
+	int num; 
+	num = rand() & 100;
+	if (num <= accuracyPercent)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool BattleSystem::CheckIsCritical(Character& attacker, Character& target, bool isPowerAttack)
+{
+	int criticalPercent = 40;
+	if (isPowerAttack)
+		criticalPercent = 60;
+
+	int num;
+	num = rand() & 100;
+	if (num <= criticalPercent)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void BattleSystem::HandleCriticalAttack(Character& attacker, Character& target, int damage, bool isPowerAttack)
+{
+	int criticalDamage = damage + 10;
+	const bool wasAlive = !target.IsDead();
+	const int appliedDamage = target.ReceiveDamage(criticalDamage);
+
+	if (appliedDamage <= 0) { return; }
+
+	if (isPowerAttack)
+	{
+		attacker.SetUsedPowerAttackLastTurn(2);
+	}
+
+	eventBus.Publish(CriticalDamagedEvent{ attacker , target, appliedDamage, isPowerAttack });
+
+	if (wasAlive && target.IsDead())
+	{
+		eventBus.Publish(DeadEvent{ target });
+	}
 }
 
