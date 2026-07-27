@@ -48,7 +48,7 @@ int Character::Heal(int healAmount)
 	return hp - previousHp;
 }
 
-void Character::StartGurding()
+void Character::StartGuarding()
 {
 	if (isGuarding)
 		return;
@@ -62,6 +62,21 @@ void Character::StopGuarding()
 		return;
 
 	isGuarding = false;
+}
+
+void Character::SetUsedPowerAttackLastTurn(int coolDown)
+{
+	cooldownPowerAttack = coolDown;
+}
+
+bool Character::CanUsePowerAttackThisTurn() const
+{
+	return cooldownPowerAttack == 0;
+}
+
+int Character::GetCoolDownCount() const
+{
+	return cooldownPowerAttack;
 }
 
 bool Character::IsDead() const
@@ -83,3 +98,5 @@ bool Character::IsGuarding() const
 {
 	return isGuarding;
 }
+
+

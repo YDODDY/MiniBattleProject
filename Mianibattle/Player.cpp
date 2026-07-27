@@ -15,13 +15,29 @@ BattleAction Player::ChooseAction()
 		int choice = 0;
 
 		std::cout << "1. Attack\n";
-		std::cout << "2. Heal\n";
-		std::cout << "3. Guard\n";
+		std::cout << "2. PowerAttack\n";
+		std::cout << "3. Heal\n";
+		std::cout << "4. Guard\n";
 		std::cout << ">> ";
 
 		if (!(std::cin >> choice))
 		{
-			std::cout << "Only 1 or 2 or 3 Command is available. \n";
+			std::cout << "Only Mentioned Command is available. \n";
+
+			// cin fail 상태 해제
+			std::cin.clear();
+
+			// 입력줄 남아 있는 잘못된 내용 제거
+			std::cin.ignore(
+				std::numeric_limits<std::streamsize>::max(),
+				'\n');
+
+			continue;
+		}
+
+		if (choice == 2 && !CanUsePowerAttackThisTurn())
+		{
+			std::cout << "Can not use PowerAttack now! \n";
 
 			// cin fail 상태 해제
 			std::cin.clear();
@@ -45,11 +61,13 @@ BattleAction Player::ChooseAction()
 		case 1:
 			return BattleAction::Attack;
 		case 2:
-			return BattleAction::Heal;
+			return BattleAction::PowerAttack;
 		case 3:
+			return BattleAction::Heal;
+		case 4 : 
 			return BattleAction::Guard;
 		default:
-			std::cout << "Only 1 or 2 or 3 Command is available. \n";
+			std::cout << "Only Mentioned Command is available. \n";
 			break;
 		}
 	}

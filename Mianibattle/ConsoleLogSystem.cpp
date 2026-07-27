@@ -35,6 +35,15 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 
 void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
 {
+	if (event.isPowerAttack)
+	{
+		std::cout << "[PowerAttack!]\n";
+
+		if (event.target.IsGuarding())
+			std::cout << event.target.GetName()
+			<< "'s Guarding is failed!\n";
+	}
+
 	std::cout
 		<< event.attacker.GetName()
 		<< " attacked "
@@ -77,6 +86,6 @@ void ConsoleLogSystem::OnDead(const DeadEvent & event)
 void ConsoleLogSystem::OnGuardAttack(const GuardEvent& event)
 {
 	std::cout
-		<< event.actor.GetName()
+		<< event.defender.GetName()
 		<< "Guarded " << event.attacker.GetName() << "'s Attack! \n";
 }

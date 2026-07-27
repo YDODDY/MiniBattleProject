@@ -21,12 +21,16 @@ public :
 
 	int ReceiveDamage(int damage);
 	int Heal(int healAmount);
-	void Guard();
-	void UnGuard();
+	void StartGuarding();
+	void StopGuarding();
+	void SetUsedPowerAttackLastTurn(int coolDown);
+	bool CanUsePowerAttackThisTurn() const;
+	int GetCoolDownCount() const;
 	bool IsDead() const;
 	std::string GetName() const;
 	int GetHp() const;
 	bool IsGuarding() const;
+	
 
 
 private: 
@@ -34,4 +38,5 @@ private:
 	int hp;
 	int maxHp;
 	bool isGuarding = false;
+	int cooldownPowerAttack = false;
 };

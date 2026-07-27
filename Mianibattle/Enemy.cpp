@@ -8,5 +8,5 @@ Enemy::Enemy(const std::string& name, int hp, int maxHp)
 
 BattleAction Enemy::ChooseAction()
 {
-	return BattleAction::Attack;
+	return BattleAction::Guard;
 }

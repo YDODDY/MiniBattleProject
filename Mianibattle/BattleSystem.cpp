@@ -7,14 +7,20 @@ void BattleSystem::StartTurn(Character& character)
 {
 	if (character.IsGuarding())
 		character.StopGuarding();
+
+	if (!character.CanUsePowerAttackThisTurn())
+	{
+		int coolDown = character.GetCoolDownCount();
+		character.SetUsedPowerAttackLastTurn(coolDown-1);
+	}
 }
 
-void BattleSystem::Attack(Character& attacker, Character& target, int damage)
+void BattleSystem::Attack(Character& attacker, Character& target, int damage, bool isPowerAttack)
 {
 	if (target.IsDead())
 		return;
 
-	if (target.IsGuarding())
+	if (target.IsGuarding() && !isPowerAttack)
 	{	
 		HandleGuardedAttack(attacker, target);
 		return;
@@ -25,7 +31,12 @@ void BattleSystem::Attack(Character& attacker, Character& target, int damage)
 
 	if (appliedDamage <= 0) { return; }
 
-	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage });
+	if (isPowerAttack)
+	{
+		attacker.SetUsedPowerAttackLastTurn(2);
+	}
+
+	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, isPowerAttack});
 
 	if (wasAlive && target.IsDead())
 	{
@@ -46,7 +57,11 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 	switch (action)
 	{
 	case BattleAction::Attack:
-		Attack(actor, target, 20);
+		Attack(actor, target, 20, false);
+		break;
+
+	case BattleAction::PowerAttack:
+		Attack(actor, target, 30, true);
 		break;
 
 	case BattleAction::Heal:
@@ -67,7 +82,7 @@ void BattleSystem::Guard(Character& character)
 {
 	if (!character.IsGuarding())
 	{
-		character.StartGurding();
+		character.StartGuarding();
 	}
 }
 
@@ -84,3 +99,4 @@ void BattleSystem::HandleGuardedAttack(Character& attacker, Character& defender)
 	eventBus.Publish(GuardEvent{ attacker, defender });
 	defender.StopGuarding();
 }
+

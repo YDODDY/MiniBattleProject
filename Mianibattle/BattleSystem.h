@@ -22,7 +22,7 @@ public:
 
 	void StartTurn(Character& character);
 
-	void Attack(Character& attacker, Character& target, int damage);
+	void Attack(Character& attacker, Character& target, int damage, bool isPowerAttack);
 
 	void Heal(Character& character, int healAmount);
 

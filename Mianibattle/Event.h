@@ -8,6 +8,7 @@ struct DamagedEvent
 	Character& target;
 
 	int damage;
+	bool isPowerAttack;
 };
 
 struct HealedEvent

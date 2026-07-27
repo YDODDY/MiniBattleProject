@@ -3,6 +3,7 @@
 enum class BattleAction
 {
 	Attack, 
+	PowerAttack,
 	Heal,
 	Guard
 };
