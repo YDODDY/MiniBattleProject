@@ -36,6 +36,10 @@ public:
 
 	bool CheckItWasHit(Character& attacker, Character& target, bool isPowerAttack);
 
+	bool CheckIsCritical(Character& attacker, Character& target, bool isPowerAttack);
+
+	void HandleCriticalAttack(Character& attacker, Character& target, int damage, bool isPowerAttack);
+
 private:
 
 	EventBus& eventBus;

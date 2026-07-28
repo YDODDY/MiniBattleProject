@@ -6,13 +6,12 @@
 
 void BattleSystem::StartTurn(Character& character)
 {
-	if (character.IsGuarding())
-		character.StopGuarding();
+	int statusDamge = character.BeginTurn();
 
-	if (!character.CanUsePowerAttackThisTurn())
+	if (statusDamge > 0)
 	{
-		int coolDown = character.GetCoolDownCount();
-		character.SetUsedPowerAttackLastTurn(coolDown-1);
+		eventBus.Publish(DamagedEvent{ character, character, 
+			statusDamge, DamageType::Poison, false, false });
 	}
 }
 
@@ -49,7 +48,7 @@ void BattleSystem::Attack(Character& attacker, Character& target, int damage, bo
 		attacker.SetUsedPowerAttackLastTurn(2);
 	}
 
-	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, isPowerAttack});
+	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage,  DamageType::Normal, false, isPowerAttack});
 
 	if (wasAlive && target.IsDead())
 	{
@@ -158,11 +157,12 @@ void BattleSystem::HandleCriticalAttack(Character& attacker, Character& target, 
 		attacker.SetUsedPowerAttackLastTurn(2);
 	}
 
-	eventBus.Publish(CriticalDamagedEvent{ attacker , target, appliedDamage, isPowerAttack });
+	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, DamageType::Normal, true, isPowerAttack });
 
 	if (wasAlive && target.IsDead())
 	{
 		eventBus.Publish(DeadEvent{ target });
 	}
 }
+
 

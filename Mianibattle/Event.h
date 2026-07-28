@@ -1,6 +1,11 @@
 #pragma once
 #include "Character.h"
 
+enum class DamageType
+{
+	Normal,
+	Poison
+};
 
 struct DamagedEvent
 {
@@ -8,6 +13,10 @@ struct DamagedEvent
 	Character& target;
 
 	int damage;
+
+	DamageType damageType;
+
+	bool isCritical;
 	bool isPowerAttack;
 };
 
@@ -38,11 +47,13 @@ struct MissedEvent
 	bool isPowerAttack;
 };
 
-struct CriticalDamagedEvent
+struct AttackData
 {
-	Character& attacker;
-	Character& target;
+	int damage;
+	DamageType damageType;
 
-	int criticalDamage;
 	bool isPowerAttack;
+	bool hasStatusEffect;
+
+	StatusEffect statusEffect;
 };

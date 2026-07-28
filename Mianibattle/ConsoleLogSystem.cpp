@@ -51,13 +51,28 @@ void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
 			<< "'s Guarding is failed!\n";
 	}
 
-	std::cout
-		<< event.attacker.GetName()
-		<< " attacked "
-		<< event.target.GetName()
-		<< " for "
-		<< event.damage
-		<< " damage.\n";
+	if (event.isCritical)
+	{
+		std::cout << "[Critical Attack!]\n";
+	}
+
+	if (event.damageType == DamageType::Poison)
+	{
+		std::cout << event.target.GetName()
+			<< " takes "
+			<< event.damage
+			<< " poison damage.\n";
+	}
+	else 
+	{
+		std::cout
+			<< event.attacker.GetName()
+			<< " attacked "
+			<< event.target.GetName()
+			<< " for "
+			<< event.damage
+			<< " damage.\n";
+	}
 
 	std::cout
 		<< event.target.GetName()
@@ -105,32 +120,4 @@ void ConsoleLogSystem::OnMissedAttack(const MissedEvent& event)
 		std::cout << "Power "; 
 	}
 	std::cout << "Attack to " << event.target.GetName() << " is Missed! \n";
-}
-
-void ConsoleLogSystem::OnCriticalDamaged(const CriticalDamagedEvent& event)
-{
-	std::cout << "[Critical Attack!]\n";
-
-	if (event.isPowerAttack)
-	{
-		std::cout << "[PowerAttack!]\n";
-
-		if (event.target.IsGuarding())
-			std::cout << event.target.GetName()
-			<< "'s Guarding is failed!\n";
-	}
-
-	std::cout
-		<< event.attacker.GetName()
-		<< " attacked "
-		<< event.target.GetName()
-		<< " for "
-		<< event.criticalDamage
-		<< " damage.\n";
-
-	std::cout
-		<< event.target.GetName()
-		<< " HP: "
-		<< event.target.GetHp()
-		<< '\n';
 }

@@ -1,0 +1,78 @@
+#include "Status.h"
+#include <algorithm>
+
+void Status::Add(StatusEffect effect)
+{
+	for (auto& current : effects)
+	{
+		if (current.type == effect.type)
+		{
+			current.remainingTurns = effect.remainingTurns;
+			current.value = effect.value;
+			return;
+		}
+	}
+
+	effects.push_back(effect);
+}
+
+bool Status::Has(StatusType type) const
+{
+	for (const auto& effect : effects)
+	{
+		if (effect.type == type)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void Status::Remove(StatusType type)
+{
+	for (auto it = effects.begin(); it != effects.end(); ++it)
+	{
+		if (it->type == type)
+		{
+			effects.erase(it);
+			return;
+		}
+	}
+}
+
+const StatusEffect* Status::Find(StatusType type) const
+{
+	for (auto& current : effects)
+	{
+		if (current.type == type)
+		{
+			return &current;
+		}
+	}
+
+	return nullptr;
+}
+
+void Status::DecreaseTurns()
+{
+	for (auto& effect : effects)
+	{
+		--effect.remainingTurns;
+	}
+}
+
+void Status::RemoveExpired()
+{
+	for (auto it = effects.begin(); it != effects.end();)
+	{
+		if (it->remainingTurns <= 0)
+		{
+			it = effects.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+}

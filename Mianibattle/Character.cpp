@@ -1,6 +1,20 @@
 #include "Character.h"
 #include <iostream>
 
+int Character::BeginTurn()
+{
+	if (IsGuarding())
+		StopGuarding();
+
+	if (!CanUsePowerAttackThisTurn())
+	{
+		int coolDown = GetCoolDownCount();
+		SetUsedPowerAttackLastTurn(coolDown - 1);
+	}
+
+	return ProcessStatusEffects();
+}
+
 int Character::ReceiveDamage(int damage)
 {
 	if (IsDead())
@@ -97,6 +111,40 @@ int Character::GetHp() const
 bool Character::IsGuarding() const
 {
 	return isGuarding;
+}
+
+int Character::ProcessStatusEffects()
+{
+	int statusDamage = 0;
+
+	const StatusEffect* poison = status.Find(StatusType::Poison);
+
+	if (poison != nullptr)
+	{
+		statusDamage = poison->value;
+		ReceiveDamage(statusDamage);
+	}
+
+	status.DecreaseTurns();
+	status.RemoveExpired();
+
+	return statusDamage;
+
+}
+
+void Character::ApplyStatus(const StatusEffect& effect)
+{
+	status.Add(effect);
+}
+
+bool Character::HasStatus(StatusType type) const
+{
+	return status.Has(type);
+}
+
+void Character::RemoveStatus(StatusType type)
+{
+	status.Remove(type);
 }
 
 

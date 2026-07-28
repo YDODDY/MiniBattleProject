@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include "BattleAction.h"
+#include "Status.h"
 
 class Character
 {
@@ -18,6 +19,7 @@ public :
 
 	virtual BattleAction ChooseAction() = 0;
 
+	int BeginTurn();
 
 	int ReceiveDamage(int damage);
 	int Heal(int healAmount);
@@ -30,8 +32,11 @@ public :
 	std::string GetName() const;
 	int GetHp() const;
 	bool IsGuarding() const;
-	
+	int ProcessStatusEffects();
 
+	void ApplyStatus(const StatusEffect& effect);
+	bool HasStatus(StatusType type) const;
+	void RemoveStatus(StatusType type);
 
 private: 
 	std::string name;
@@ -39,4 +44,6 @@ private:
 	int maxHp;
 	bool isGuarding = false;
 	int cooldownPowerAttack = false;
+
+	Status status;
 };
