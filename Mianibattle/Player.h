@@ -6,7 +6,7 @@
 class Player : public Character
 {
 public:
-	Player(const std::string& name, int hp, int maxHp);
+	Player(const std::string& name, int hp, int maxHp, int defaultDamage);
 
 	BattleAction ChooseAction() override;
 

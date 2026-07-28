@@ -38,6 +38,12 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 		}
 	);
 
+	eventBus.Subscribe<AppliedStatusEvent>(
+		[this](const AppliedStatusEvent& event)
+		{
+			OnAppliedStatus(event);
+		}
+	);
 }
 
 void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
@@ -120,4 +126,10 @@ void ConsoleLogSystem::OnMissedAttack(const MissedEvent& event)
 		std::cout << "Power "; 
 	}
 	std::cout << "Attack to " << event.target.GetName() << " is Missed! \n";
+}
+
+void ConsoleLogSystem::OnAppliedStatus(const AppliedStatusEvent& event)
+{
+	std::cout << event.character.GetName() << " fall into "
+		<< ToString(event.statusEffect.type) << "! \n";
 }

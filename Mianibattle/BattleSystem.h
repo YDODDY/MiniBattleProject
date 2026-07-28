@@ -22,7 +22,7 @@ public:
 
 	void StartTurn(Character& character);
 
-	void Attack(Character& attacker, Character& target, int damage, bool isPowerAttack);
+	void Attack(Character& attacker, Character& target, const AttackData& attackData);
 
 	void Heal(Character& character, int healAmount);
 
@@ -38,7 +38,9 @@ public:
 
 	bool CheckIsCritical(Character& attacker, Character& target, bool isPowerAttack);
 
-	void HandleCriticalAttack(Character& attacker, Character& target, int damage, bool isPowerAttack);
+	void HandleCriticalAttack(Character& attacker, Character& target, const AttackData& attackData);
+
+	AttackData MakeAttackData(Character& character, BattleAction action);
 
 private:
 

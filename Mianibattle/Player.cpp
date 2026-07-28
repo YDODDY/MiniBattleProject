@@ -2,8 +2,8 @@
 #include <iostream>
 #include <limits>
 
-Player::Player(const std::string& name, int hp, int maxHp)
-	: Character(name, hp, maxHp)
+Player::Player(const std::string& name, int hp, int maxHp, int defaultDamage)
+	: Character(name, hp, maxHp, defaultDamage)
 {
 
 }
@@ -16,8 +16,9 @@ BattleAction Player::ChooseAction()
 
 		std::cout << "1. Attack\n";
 		std::cout << "2. PowerAttack\n";
-		std::cout << "3. Heal\n";
-		std::cout << "4. Guard\n";
+		std::cout << "3. PoisonAttack\n";
+		std::cout << "4. Heal\n";
+		std::cout << "5. Guard\n";
 		std::cout << ">> ";
 
 		if (!(std::cin >> choice))
@@ -63,8 +64,10 @@ BattleAction Player::ChooseAction()
 		case 2:
 			return BattleAction::PowerAttack;
 		case 3:
-			return BattleAction::Heal;
+			return BattleAction::PoisonAttack;
 		case 4 : 
+			return BattleAction::Heal;
+		case 5 :
 			return BattleAction::Guard;
 		default:
 			std::cout << "Only Mentioned Command is available. \n";

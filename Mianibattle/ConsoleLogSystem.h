@@ -15,4 +15,5 @@ private:
 	void OnDead(const DeadEvent& event);
 	void OnGuardAttack(const GuardEvent& event);
 	void OnMissedAttack(const MissedEvent& event);
+	void OnAppliedStatus(const AppliedStatusEvent& event);
 };

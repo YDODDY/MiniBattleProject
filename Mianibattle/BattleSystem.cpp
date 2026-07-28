@@ -6,6 +6,7 @@
 
 void BattleSystem::StartTurn(Character& character)
 {
+	const bool wasAlive = !character.IsDead();
 	int statusDamge = character.BeginTurn();
 
 	if (statusDamge > 0)
@@ -13,42 +14,53 @@ void BattleSystem::StartTurn(Character& character)
 		eventBus.Publish(DamagedEvent{ character, character, 
 			statusDamge, DamageType::Poison, false, false });
 	}
+
+	if (wasAlive && character.IsDead())
+	{
+		eventBus.Publish(DeadEvent{ character });
+	}
 }
 
-void BattleSystem::Attack(Character& attacker, Character& target, int damage, bool isPowerAttack)
+void BattleSystem::Attack(Character& attacker, Character& target, const AttackData& attackData)
 {
 	if (target.IsDead())
 		return;
 
-	if (!CheckItWasHit(attacker, target, isPowerAttack))
+	if (!CheckItWasHit(attacker, target, attackData.isPowerAttack))
 	{
-		eventBus.Publish(MissedEvent{ attacker, target, isPowerAttack });
+		eventBus.Publish(MissedEvent{ attacker, target, attackData.isPowerAttack });
 		return;
 	}
 
-	if (CheckIsCritical(attacker, target, isPowerAttack))
+	if (CheckIsCritical(attacker, target, attackData.isPowerAttack))
 	{
-		HandleCriticalAttack(attacker, target, damage, isPowerAttack);
+		HandleCriticalAttack(attacker, target, attackData);
 		return;
 	}
 
-	if (target.IsGuarding() && !isPowerAttack)
+	if (target.IsGuarding() && !attackData.isPowerAttack)
 	{	
 		HandleGuardedAttack(attacker, target);
 		return;
 	}
 
 	const bool wasAlive = !target.IsDead();
-	const int appliedDamage = target.ReceiveDamage(damage);
+	const int appliedDamage = target.ReceiveDamage(attackData.damage);
 
 	if (appliedDamage <= 0) { return; }
 
-	if (isPowerAttack)
+	if (attackData.isPowerAttack)
 	{
 		attacker.SetUsedPowerAttackLastTurn(2);
 	}
 
-	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage,  DamageType::Normal, false, isPowerAttack});
+	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage,  DamageType::Normal, false, attackData.isPowerAttack});
+
+	if (attackData.statusEffect.has_value())
+	{
+		target.ApplyStatus(*attackData.statusEffect);
+		eventBus.Publish(AppliedStatusEvent{ target, *attackData.statusEffect });
+	}
 
 	if (wasAlive && target.IsDead())
 	{
@@ -66,14 +78,20 @@ void BattleSystem::Heal(Character& character, int healAmount)
 
 void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Character& target)
 {
+	AttackData data = MakeAttackData(actor, action);
+
 	switch (action)
 	{
 	case BattleAction::Attack:
-		Attack(actor, target, 5, false);
+		Attack(actor, target, data);
 		break;
 
 	case BattleAction::PowerAttack:
-		Attack(actor, target, 10, true);
+		Attack(actor, target, data);
+		break;
+
+	case BattleAction::PoisonAttack:
+		Attack(actor, target, data);
 		break;
 
 	case BattleAction::Heal:
@@ -120,7 +138,7 @@ bool BattleSystem::CheckItWasHit(Character& attacker, Character& target, bool is
 	
 	int num; 
 	num = rand() & 100;
-	if (num <= accuracyPercent)
+	if (num < accuracyPercent)
 	{
 		return true;
 	}
@@ -136,7 +154,7 @@ bool BattleSystem::CheckIsCritical(Character& attacker, Character& target, bool 
 
 	int num;
 	num = rand() & 100;
-	if (num <= criticalPercent)
+	if (num < criticalPercent)
 	{
 		return true;
 	}
@@ -144,25 +162,79 @@ bool BattleSystem::CheckIsCritical(Character& attacker, Character& target, bool 
 	return false;
 }
 
-void BattleSystem::HandleCriticalAttack(Character& attacker, Character& target, int damage, bool isPowerAttack)
+void BattleSystem::HandleCriticalAttack(Character& attacker, Character& target, const AttackData& attackData)
 {
-	int criticalDamage = damage + 10;
+	int criticalDamage = attackData.damage + 10;
 	const bool wasAlive = !target.IsDead();
 	const int appliedDamage = target.ReceiveDamage(criticalDamage);
 
 	if (appliedDamage <= 0) { return; }
 
-	if (isPowerAttack)
+	if (attackData.isPowerAttack)
 	{
 		attacker.SetUsedPowerAttackLastTurn(2);
 	}
 
-	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, DamageType::Normal, true, isPowerAttack });
+	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, DamageType::Normal, true, attackData.isPowerAttack });
+
+	if (attackData.statusEffect.has_value())
+	{
+		target.ApplyStatus(*attackData.statusEffect);
+		eventBus.Publish(AppliedStatusEvent{ target, *attackData.statusEffect });
+	}
 
 	if (wasAlive && target.IsDead())
 	{
 		eventBus.Publish(DeadEvent{ target });
 	}
+}
+
+AttackData BattleSystem::MakeAttackData(Character& character, BattleAction action)
+{
+	AttackData data;
+	data.damage = character.GetDefualtDamage();
+	
+	switch (action)
+	{
+	case BattleAction::Attack:
+		data.damageType = DamageType::Normal;
+		data.isPowerAttack = false;
+		break;
+
+	case BattleAction::PowerAttack:
+		data.damageType = DamageType::Normal;
+		data.isPowerAttack = true;
+		break;
+
+	case BattleAction::PoisonAttack:
+		data.damageType = DamageType::Normal;
+		data.isPowerAttack = false;
+
+		StatusEffect effect;
+		effect.type = StatusType::Poison;
+		effect.remainingTurns = 3;
+		effect.value = 1;
+
+		data.statusEffect = effect;
+		break;
+
+		/*
+	case BattleAction::Heal:
+		data.damageType = DamageType::None;
+		data.isPowerAttack = false;
+		break;
+
+	case BattleAction::Guard:
+		data.damageType = DamageType::None;
+		data.isPowerAttack = false;
+		break;
+		*/
+
+	default:
+		break;
+	}
+
+	return data;
 }
 
 

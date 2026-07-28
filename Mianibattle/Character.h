@@ -9,8 +9,8 @@ class Character
 
 public : 
 
-	Character(std::string inputName, int inputHp, int inputMaxHP)
-		: name(inputName), hp(inputHp), maxHp(inputMaxHP)
+	Character(std::string inputName, int inputHp, int inputMaxHP, int inputDefaultDamage)
+		: name(inputName), hp(inputHp), maxHp(inputMaxHP), defaultDamage(inputDefaultDamage)
 	{
 	
 	}
@@ -31,6 +31,7 @@ public :
 	bool IsDead() const;
 	std::string GetName() const;
 	int GetHp() const;
+	int GetDefualtDamage() const;
 	bool IsGuarding() const;
 	int ProcessStatusEffects();
 
@@ -42,6 +43,7 @@ private:
 	std::string name;
 	int hp;
 	int maxHp;
+	int defaultDamage;
 	bool isGuarding = false;
 	int cooldownPowerAttack = false;
 

@@ -76,3 +76,26 @@ void Status::RemoveExpired()
 		}
 	}
 }
+
+std::string ToString(StatusType type)
+{
+	switch (type)
+	{
+	case StatusType::None:
+		return "None";
+
+	case StatusType::Poison:
+		return "Poisoned";
+
+	case StatusType::Stun:
+		return "Stuned";
+
+	case StatusType::Sleep:
+		return "asleep";
+
+	default:
+		return "None";
+	}
+
+	return "None";
+}

@@ -1,8 +1,10 @@
 #pragma once
 #include "Character.h"
+#include <optional>
 
 enum class DamageType
 {
+	None,
 	Normal,
 	Poison
 };
@@ -47,13 +49,18 @@ struct MissedEvent
 	bool isPowerAttack;
 };
 
+struct AppliedStatusEvent
+{
+	Character& character;
+	StatusEffect statusEffect;
+};
+
 struct AttackData
 {
 	int damage;
 	DamageType damageType;
 
 	bool isPowerAttack;
-	bool hasStatusEffect;
 
-	StatusEffect statusEffect;
+	std::optional<StatusEffect> statusEffect;
 };

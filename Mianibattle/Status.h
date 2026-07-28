@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 enum class StatusType
 {
@@ -9,6 +10,8 @@ enum class StatusType
 	Stun,
 	Sleep
 };
+
+std::string ToString(StatusType type);
 
 struct StatusEffect
 {

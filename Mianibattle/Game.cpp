@@ -13,8 +13,8 @@ Game::Game()
 
 void Game::Run()
 {
-	Player player("Player", 100, 100);
-	Enemy enemy("Enemy", 50, 50);
+	Player player("Player", 100, 100, 10);
+	Enemy enemy("Enemy", 50, 50, 10);
 
 	StartBattle(player, enemy);
 	RunBattleLoop(player, enemy);

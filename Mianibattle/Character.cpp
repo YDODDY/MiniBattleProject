@@ -108,6 +108,11 @@ int Character::GetHp() const
 	return hp;
 }
 
+int Character::GetDefualtDamage() const
+{
+	return defaultDamage;
+}
+
 bool Character::IsGuarding() const
 {
 	return isGuarding;
