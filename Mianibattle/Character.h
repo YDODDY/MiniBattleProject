@@ -3,6 +3,7 @@
 #include <string>
 #include "BattleAction.h"
 #include "Status.h"
+#include "TurnStartResult.h"
 
 class Character
 {
@@ -19,7 +20,7 @@ public :
 
 	virtual BattleAction ChooseAction() = 0;
 
-	int BeginTurn();
+	TurnStartResult BeginTurn();
 
 	int ReceiveDamage(int damage);
 	int Heal(int healAmount);
@@ -33,7 +34,6 @@ public :
 	int GetHp() const;
 	int GetDefualtDamage() const;
 	bool IsGuarding() const;
-	int ProcessStatusEffects();
 
 	void ApplyStatus(const StatusEffect& effect);
 	bool HasStatus(StatusType type) const;

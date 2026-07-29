@@ -7,17 +7,22 @@
 void BattleSystem::StartTurn(Character& character)
 {
 	const bool wasAlive = !character.IsDead();
-	int statusDamge = character.BeginTurn();
+	TurnStartResult result = character.BeginTurn();
 
-	if (statusDamge > 0)
+	if (result.damage > 0)
 	{
 		eventBus.Publish(DamagedEvent{ character, character, 
-			statusDamge, DamageType::Poison, false, false });
+			result.damage, result.damageType, false, false });
 	}
 
 	if (wasAlive && character.IsDead())
 	{
 		eventBus.Publish(DeadEvent{ character });
+	}
+
+	if (!result.canAct)
+	{
+
 	}
 }
 
@@ -141,33 +146,6 @@ bool BattleSystem::CheckIsCritical(Character& attacker, Character& target, bool 
 	}
 
 	return false;
-}
-
-void BattleSystem::HandleCriticalAttack(Character& attacker, Character& target, const AttackData& attackData)
-{
-	int criticalDamage = attackData.damage + 10;
-	const bool wasAlive = !target.IsDead();
-	const int appliedDamage = target.ReceiveDamage(criticalDamage);
-
-	if (appliedDamage <= 0) { return; }
-
-	if (attackData.isPowerAttack)
-	{
-		attacker.SetUsedPowerAttackLastTurn(2);
-	}
-
-	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, DamageType::Normal, true, attackData.isPowerAttack });
-
-	if (attackData.statusEffect.has_value())
-	{
-		target.ApplyStatus(*attackData.statusEffect);
-		eventBus.Publish(AppliedStatusEvent{ target, *attackData.statusEffect });
-	}
-
-	if (wasAlive && target.IsDead())
-	{
-		eventBus.Publish(DeadEvent{ target });
-	}
 }
 
 AttackData BattleSystem::MakeAttackData(Character& character, BattleAction action)

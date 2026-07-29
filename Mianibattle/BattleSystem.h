@@ -3,6 +3,7 @@
 #include "Character.h"
 #include "Event.h"
 #include "EventBus.h"
+#include "AttackData.h"
 
 // 객체를 실제로 만들려면 (참조X) 크기, 맴버, 생성자 모두 알아야 하기 때문에 전방 선언 만으로는 모른다. 그래서 include 해줘야 함
 
@@ -37,8 +38,6 @@ public:
 	bool CheckItWasHit(Character& attacker, Character& target, bool isPowerAttack);
 
 	bool CheckIsCritical(Character& attacker, Character& target, bool isPowerAttack);
-
-	void HandleCriticalAttack(Character& attacker, Character& target, const AttackData& attackData);
 
 	AttackData MakeAttackData(Character& character, BattleAction action);
 

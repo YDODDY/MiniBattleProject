@@ -149,16 +149,19 @@
     <ClCompile Include="Status.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AttackData.h" />
     <ClInclude Include="BattleAction.h" />
     <ClInclude Include="BattleResult.h" />
     <ClInclude Include="BattleSystem.h" />
     <ClInclude Include="Character.h" />
+    <ClInclude Include="DamageType.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="EventBus.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Status.h" />
+    <ClInclude Include="TurnStartResult.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ConsoleLogSystem.h" />

@@ -1,18 +1,22 @@
 #include "Character.h"
 #include <iostream>
 
-int Character::BeginTurn()
+TurnStartResult Character::BeginTurn()
 {
-	if (IsGuarding())
-		StopGuarding();
+	TurnStartResult result;
 
-	if (!CanUsePowerAttackThisTurn())
+	const StatusEffect* poison = status.Find(StatusType::Poison);
+
+	if (poison != nullptr)
 	{
-		int coolDown = GetCoolDownCount();
-		SetUsedPowerAttackLastTurn(coolDown - 1);
+		result.damage = ReceiveDamage(poison->value);
+		result.damageType = DamageType::Poison;
 	}
 
-	return ProcessStatusEffects();
+	status.DecreaseTurns();
+	status.RemoveExpired();
+
+	return result;
 }
 
 int Character::ReceiveDamage(int damage)
@@ -118,24 +122,6 @@ bool Character::IsGuarding() const
 	return isGuarding;
 }
 
-int Character::ProcessStatusEffects()
-{
-	int statusDamage = 0;
-
-	const StatusEffect* poison = status.Find(StatusType::Poison);
-
-	if (poison != nullptr)
-	{
-		statusDamage = poison->value;
-		ReceiveDamage(statusDamage);
-	}
-
-	status.DecreaseTurns();
-	status.RemoveExpired();
-
-	return statusDamage;
-
-}
 
 void Character::ApplyStatus(const StatusEffect& effect)
 {
