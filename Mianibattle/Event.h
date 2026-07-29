@@ -47,3 +47,8 @@ struct AppliedStatusEvent
 	StatusEffect statusEffect;
 };
 
+struct ActionPreventedEvent
+{
+	Character& character;
+	StatusType reason;
+};

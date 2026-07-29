@@ -4,7 +4,7 @@
 #include <iostream>
 #include <random>
 
-void BattleSystem::StartTurn(Character& character)
+TurnStartResult BattleSystem::StartTurn(Character& character)
 {
 	const bool wasAlive = !character.IsDead();
 	TurnStartResult result = character.BeginTurn();
@@ -22,8 +22,10 @@ void BattleSystem::StartTurn(Character& character)
 
 	if (!result.canAct)
 	{
-
+		eventBus.Publish(ActionPreventedEvent{character, result.preventedBy});
 	}
+	\
+		return result;
 }
 
 void BattleSystem::Attack(Character& attacker, Character& target, const AttackData& attackData)
@@ -154,7 +156,12 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 	data.damage = character.GetDefualtDamage();
 	data.damageType = DamageType::Normal;
 	data.isPowerAttack = false;
-	
+
+	StatusEffect effect;
+	effect.type = StatusType::None;
+	effect.remainingTurns = 0;
+	effect.value = 0;
+
 	switch (action)
 	{
 	case BattleAction::Attack:
@@ -165,8 +172,6 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 		break;
 
 	case BattleAction::PoisonAttack:
-
-		StatusEffect effect;
 		effect.type = StatusType::Poison;
 		effect.remainingTurns = 3;
 		effect.value = 1;
@@ -174,6 +179,12 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 		data.statusEffect = effect;
 		break;
 
+	case BattleAction::StunAttack:
+		effect.type = StatusType::Stun;
+		effect.remainingTurns = 1;
+
+		data.statusEffect = effect;
+		break;
 		/*
 	case BattleAction::Heal:
 		data.damageType = DamageType::None;

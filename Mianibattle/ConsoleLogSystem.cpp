@@ -44,6 +44,13 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 			OnAppliedStatus(event);
 		}
 	);
+
+	eventBus.Subscribe<ActionPreventedEvent>(
+		[this](const ActionPreventedEvent& event)
+		{
+			OnPreventedAction(event);
+		}
+	);
 }
 
 void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
@@ -132,4 +139,10 @@ void ConsoleLogSystem::OnAppliedStatus(const AppliedStatusEvent& event)
 {
 	std::cout << event.character.GetName() << " fall into "
 		<< ToString(event.statusEffect.type) << "! \n";
+}
+
+void ConsoleLogSystem::OnPreventedAction(const ActionPreventedEvent& event)
+{
+	std::cout << event.character.GetName() << " cannot act because of "
+		<< ToString(event.reason) << " !\n";
 }

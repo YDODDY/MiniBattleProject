@@ -52,22 +52,32 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 	// 둘 다 살아있는 동안 반복
 	while (true)
 	{
-		battleSystem.StartTurn(player);
-		BattleAction playerAction = player.ChooseAction();
+		TurnStartResult playerTurn = battleSystem.StartTurn(player);
 
-		battleSystem.ExecuteAction(playerAction, player, enemy);
-
-		// player 행동
 		if (CheckBattleEnd(player, enemy))
 			break;
 
+		if (playerTurn.canAct)
+		{
+			BattleAction playerAction = player.ChooseAction();
 
-		battleSystem.StartTurn(enemy);
-		BattleAction enemyAction = enemy.ChooseAction();
+			battleSystem.ExecuteAction(playerAction, player, enemy);
+		}
 
-		battleSystem.ExecuteAction(enemyAction, enemy, player);
+		if (CheckBattleEnd(player, enemy))
+			break;
 
-		// enemy 행동
+		TurnStartResult enemyTurn = battleSystem.StartTurn(enemy);
+
+		if (CheckBattleEnd(player, enemy))
+			break;
+
+		if (enemyTurn.canAct)
+		{
+			BattleAction enemyAction = enemy.ChooseAction();
+			battleSystem.ExecuteAction(enemyAction, enemy, player);
+		}
+
 		if (CheckBattleEnd(player, enemy))
 			break;
 	}

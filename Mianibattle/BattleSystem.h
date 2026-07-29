@@ -21,7 +21,7 @@ public:
 
 	}
 
-	void StartTurn(Character& character);
+	TurnStartResult StartTurn(Character& character);
 
 	void Attack(Character& attacker, Character& target, const AttackData& attackData);
 
