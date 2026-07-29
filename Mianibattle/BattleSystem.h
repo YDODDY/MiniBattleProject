@@ -42,6 +42,8 @@ public:
 
 	AttackData MakeAttackData(Character& character, BattleAction action);
 
+	void ApplyAttackResult(Character& attacker, Character& target, int damage, const AttackData& attackData, bool isCritical);
+
 private:
 
 	EventBus& eventBus;
