@@ -39,6 +39,8 @@ public :
 	bool HasStatus(StatusType type) const;
 	void RemoveStatus(StatusType type);
 
+	TurnStartResult ProcessTurnStartStatuses();
+
 private: 
 	std::string name;
 	int hp;

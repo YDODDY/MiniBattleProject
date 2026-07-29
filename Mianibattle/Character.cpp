@@ -3,19 +3,8 @@
 
 TurnStartResult Character::BeginTurn()
 {
-	TurnStartResult result;
-
-	const StatusEffect* poison = status.Find(StatusType::Poison);
-
-	if (poison != nullptr)
-	{
-		result.damage = ReceiveDamage(poison->value);
-		result.damageType = DamageType::Poison;
-	}
-
-	status.DecreaseTurns();
-	status.RemoveExpired();
-
+	TurnStartResult result = ProcessTurnStartStatuses();
+	status.TickTurn();
 	return result;
 }
 
@@ -136,6 +125,34 @@ bool Character::HasStatus(StatusType type) const
 void Character::RemoveStatus(StatusType type)
 {
 	status.Remove(type);
+}
+
+TurnStartResult Character::ProcessTurnStartStatuses()
+{
+	TurnStartResult result;
+
+	for (const StatusEffect& effect : status.GetEffects())
+	{
+		switch (effect.type)	
+		{
+		case StatusType::Poison:
+			ReceiveDamage(effect.value);
+			result.damage += effect.value;
+			result.damageType = DamageType::Poison;
+			break;
+		
+		case StatusType::Stun:
+			result.canAct = false;
+			result.preventedBy = StatusType::Stun;
+			break;
+
+		case StatusType::Sleep:
+			result.canAct = false;
+			result.preventedBy = StatusType::Sleep;
+		}
+	}
+
+	return result;
 }
 
 

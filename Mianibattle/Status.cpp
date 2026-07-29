@@ -41,6 +41,25 @@ void Status::Remove(StatusType type)
 	}
 }
 
+void Status::TickTurn()
+{
+	for (StatusEffect& effect : effects)
+	{
+		effect.remainingTurns--;
+	}
+
+	effects.erase(
+		std::remove_if(
+			effects.begin(),
+			effects.end(),
+			[](const StatusEffect& effect)
+			{
+				return effect.remainingTurns <= 0;
+			}),
+		effects.end());
+
+}
+
 const StatusEffect* Status::Find(StatusType type) const
 {
 	for (auto& current : effects)
@@ -54,27 +73,9 @@ const StatusEffect* Status::Find(StatusType type) const
 	return nullptr;
 }
 
-void Status::DecreaseTurns()
+const std::vector<StatusEffect>& Status::GetEffects() const
 {
-	for (auto& effect : effects)
-	{
-		--effect.remainingTurns;
-	}
-}
-
-void Status::RemoveExpired()
-{
-	for (auto it = effects.begin(); it != effects.end();)
-	{
-		if (it->remainingTurns <= 0)
-		{
-			it = effects.erase(it);
-		}
-		else
-		{
-			++it;
-		}
-	}
+	return effects;
 }
 
 std::string ToString(StatusType type)

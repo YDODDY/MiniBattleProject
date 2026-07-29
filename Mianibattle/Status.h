@@ -29,9 +29,9 @@ public:
 	void Add(StatusEffect effect);
 	bool Has(StatusType type) const;
 	void Remove(StatusType type);
+	void TickTurn();
 
 	const StatusEffect* Find(StatusType type) const;
 
-	void DecreaseTurns();
-	void RemoveExpired();
+	const std::vector<StatusEffect>& GetEffects() const;
 };
