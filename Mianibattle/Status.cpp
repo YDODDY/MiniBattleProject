@@ -78,6 +78,69 @@ const std::vector<StatusEffect>& Status::GetEffects() const
 	return effects;
 }
 
+StatusGroup Status::GetStatusGroup(StatusType type) const
+{
+	switch (type)
+	{
+	case StatusType::Stun:
+	case StatusType::Sleep:
+		return StatusGroup::ActionControl;
+
+	case StatusType::Poison:
+	case StatusType::Freeze:
+	case StatusType::Burn:
+		return StatusGroup::ElementalState;
+
+	default:
+		return StatusGroup::Independent;
+	}
+
+	return StatusGroup::None;
+}
+
+
+bool Status::CheckConflict(StatusType existingType, StatusType newType) const
+{
+	const StatusGroup existingGroup = GetStatusGroup(existingType);
+	const StatusGroup newGroup = GetStatusGroup(newType);
+
+	if (existingGroup == StatusGroup::Independent ||
+		newGroup == StatusGroup::Independent)
+	{
+		return false;
+	}
+
+	return existingGroup == newGroup;
+}
+
+StatusApplyResult Status::TryAddEffect(StatusEffect newEffect)
+{
+	for (StatusEffect& existingEffect : effects)
+	{
+		if (existingEffect.type == newEffect.type)
+		{
+			existingEffect.remainingTurns =
+				newEffect.remainingTurns;
+
+			existingEffect.value =
+				newEffect.value;
+
+			return StatusApplyResult::Refreshed;
+		}
+	}
+
+	for (const StatusEffect& existingEffect : effects)
+	{
+		if (CheckConflict(existingEffect.type, newEffect.type))
+		{
+			return StatusApplyResult::Refected;
+		}
+	}
+
+	effects.push_back(newEffect);
+	return StatusApplyResult::Success;
+}
+
 std::string ToString(StatusType type)
 {
 	switch (type)
@@ -93,6 +156,12 @@ std::string ToString(StatusType type)
 
 	case StatusType::Sleep:
 		return "asleep";
+
+	case StatusType::Burn:
+		return "burned";
+
+	case StatusType::Freeze:
+		return "freezed";
 
 	default:
 		return "None";

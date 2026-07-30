@@ -11,8 +11,8 @@ TurnStartResult BattleSystem::StartTurn(Character& character)
 
 	if (result.damage > 0)
 	{
-		eventBus.Publish(DamagedEvent{ character, character, 
-			result.damage, result.damageType, false, false });
+		eventBus.Publish(DamageOverTimeEvent{ character, 
+			result.damage, result.preventedBy });
 	}
 
 	if (wasAlive && character.IsDead())
@@ -24,7 +24,7 @@ TurnStartResult BattleSystem::StartTurn(Character& character)
 	{
 		eventBus.Publish(ActionPreventedEvent{character, result.preventedBy});
 	}
-	\
+	
 		return result;
 }
 
@@ -172,6 +172,7 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 		break;
 
 	case BattleAction::PoisonAttack:
+		data.damageType = DamageType::DamageOverTime;
 		effect.type = StatusType::Poison;
 		effect.remainingTurns = 3;
 		effect.value = 1;
@@ -185,6 +186,24 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 
 		data.statusEffect = effect;
 		break;
+
+	case BattleAction::SleepAttack:
+		effect.type = StatusType::Sleep;
+		effect.remainingTurns = 2;
+		effect.value = 0;
+
+		data.statusEffect = effect;
+		break;
+
+	case BattleAction::FireAttack:
+		data.damageType = DamageType::DamageOverTime;
+		effect.type = StatusType::Burn;
+		effect.remainingTurns = 3;
+		effect.value = 3;
+
+		data.statusEffect = effect;
+		break;
+
 		/*
 	case BattleAction::Heal:
 		data.damageType = DamageType::None;
@@ -216,12 +235,13 @@ void BattleSystem::ApplyAttackResult(Character& attacker, Character& target, int
 		attacker.SetUsedPowerAttackLastTurn(2);
 	}
 
-	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, DamageType::Normal, true, attackData.isPowerAttack });
+	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, DamageType::Normal,true, attackData.isPowerAttack });
 
 	if (attackData.statusEffect.has_value())
 	{
-		target.ApplyStatus(*attackData.statusEffect);
-		eventBus.Publish(AppliedStatusEvent{ target, *attackData.statusEffect });
+		StatusApplyResult result;
+		result = target.ApplyStatus(*attackData.statusEffect);
+		eventBus.Publish(AppliedStatusEvent{ target, *attackData.statusEffect, result });
 	}
 
 	if (wasAlive && target.IsDead())

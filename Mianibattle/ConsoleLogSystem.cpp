@@ -51,6 +51,13 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 			OnPreventedAction(event);
 		}
 	);
+
+	eventBus.Subscribe<DamageOverTimeEvent>(
+		[this](const DamageOverTimeEvent& event)
+		{
+			OnDamageOverTime(event);
+		}
+	);
 }
 
 void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
@@ -69,23 +76,13 @@ void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
 		std::cout << "[Critical Attack!]\n";
 	}
 
-	if (event.damageType == DamageType::Poison)
-	{
-		std::cout << event.target.GetName()
-			<< " takes "
-			<< event.damage
-			<< " poison damage.\n";
-	}
-	else 
-	{
-		std::cout
-			<< event.attacker.GetName()
-			<< " attacked "
-			<< event.target.GetName()
-			<< " for "
-			<< event.damage
-			<< " damage.\n";
-	}
+	std::cout
+		<< event.attacker.GetName()
+		<< " attacked "
+		<< event.target.GetName()
+		<< " for "
+		<< event.damage
+		<< " damage.\n";
 
 	std::cout
 		<< event.target.GetName()
@@ -94,7 +91,7 @@ void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
 		<< '\n';
 }
 
-void ConsoleLogSystem::OnHealed(const HealedEvent & event)
+void ConsoleLogSystem::OnHealed(const HealedEvent& event)
 {
 	std::cout
 		<< event.healer.GetName()
@@ -111,7 +108,7 @@ void ConsoleLogSystem::OnHealed(const HealedEvent & event)
 		<< '\n';
 }
 
-void ConsoleLogSystem::OnDead(const DeadEvent & event)
+void ConsoleLogSystem::OnDead(const DeadEvent& event)
 {
 	std::cout
 		<< event.deadCharacter.GetName()
@@ -137,12 +134,63 @@ void ConsoleLogSystem::OnMissedAttack(const MissedEvent& event)
 
 void ConsoleLogSystem::OnAppliedStatus(const AppliedStatusEvent& event)
 {
-	std::cout << event.character.GetName() << " fall into "
-		<< ToString(event.statusEffect.type) << "! \n";
+	switch (event.result)
+	{
+	case StatusApplyResult::Success:
+		std::cout << event.character.GetName() << " fall into "
+			<< ToString(event.statusEffect.type) << "! \n";
+		break;
+
+	case StatusApplyResult::Refreshed:
+		std::cout << event.character.GetName() << " fall into "
+			<< ToString(event.statusEffect.type) << " again! \n";
+		break;
+
+	case StatusApplyResult::Refected:
+		std::cout << event.character.GetName() << " didn't fall into "
+			<< ToString(event.statusEffect.type) << ". \n";
+
+		break;
+	default:
+		break;
+	}
+
 }
 
 void ConsoleLogSystem::OnPreventedAction(const ActionPreventedEvent& event)
 {
 	std::cout << event.character.GetName() << " cannot act because of "
 		<< ToString(event.reason) << " !\n";
+}
+
+void ConsoleLogSystem::OnDamageOverTime(const DamageOverTimeEvent& event)
+{
+	switch (event.statusType)
+	{
+	case StatusType::Poison:
+		std::cout << event.target.GetName()
+			<< " takes "
+			<< event.damage
+			<< " poison damage.\n";
+		break;
+
+	case StatusType::Burn:
+		std::cout << event.target.GetName()
+			<< " takes "
+			<< event.damage
+			<< " burn damage.\n";
+		break;
+
+	default:
+		std::cout << event.target.GetName()
+			<< " takes "
+			<< event.damage
+			<< " damage over time.\n";
+		break;
+	}
+
+	std::cout << event.target.GetName()
+		<< " HP: "
+		<< event.target.GetHp()
+		<< '\n';
 }

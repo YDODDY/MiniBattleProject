@@ -35,7 +35,7 @@ public :
 	int GetDefualtDamage() const;
 	bool IsGuarding() const;
 
-	void ApplyStatus(const StatusEffect& effect);
+	StatusApplyResult ApplyStatus(const StatusEffect& effect);
 	bool HasStatus(StatusType type) const;
 	void RemoveStatus(StatusType type);
 

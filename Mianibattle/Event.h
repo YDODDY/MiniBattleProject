@@ -45,10 +45,18 @@ struct AppliedStatusEvent
 {
 	Character& character;
 	StatusEffect statusEffect;
+	StatusApplyResult result;
 };
 
 struct ActionPreventedEvent
 {
 	Character& character;
 	StatusType reason;
+};
+
+struct DamageOverTimeEvent
+{
+	Character& target;
+	int damage;
+	StatusType statusType;
 };

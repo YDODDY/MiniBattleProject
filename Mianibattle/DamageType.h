@@ -4,5 +4,5 @@ enum class DamageType
 {
 	None,
 	Normal,
-	Poison
+	DamageOverTime
 };

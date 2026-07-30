@@ -7,6 +7,7 @@ enum class BattleAction
 	PoisonAttack,
 	StunAttack,
 	SleepAttack,
+	FireAttack,
 	Heal,
 	Guard
 };

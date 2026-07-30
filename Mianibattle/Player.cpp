@@ -20,6 +20,8 @@ BattleAction Player::ChooseAction()
 		std::cout << "4. Heal\n";
 		std::cout << "5. Guard\n";
 		std::cout << "6. StunAttack\n";
+		std::cout << "7. FireAttack\n";
+		std::cout << "8. SleepAttack\n";
 		std::cout << ">> ";
 
 		if (!(std::cin >> choice))
@@ -72,6 +74,11 @@ BattleAction Player::ChooseAction()
 			return BattleAction::Guard;
 		case 6 :
 			return BattleAction::StunAttack;
+		case 7 : 
+			return BattleAction::FireAttack;
+		case 8 : 
+			return BattleAction::SleepAttack;
+
 		default:
 			std::cout << "Only Mentioned Command is available. \n";
 			break;

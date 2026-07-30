@@ -3,10 +3,27 @@
 #include <vector>
 #include <string>
 
+enum class StatusApplyResult
+{
+	Success,
+	Refreshed,
+	Refected
+};
+
+enum class StatusGroup
+{
+	None,
+	Independent,
+	ActionControl,
+	ElementalState
+};
+
 enum class StatusType
 {
 	None,
 	Poison,
+	Freeze,
+	Burn,
 	Stun,
 	Sleep
 };
@@ -34,4 +51,9 @@ public:
 	const StatusEffect* Find(StatusType type) const;
 
 	const std::vector<StatusEffect>& GetEffects() const;
+
+	StatusGroup GetStatusGroup(StatusType type) const;
+	bool CheckConflict(StatusType existingType, StatusType newType) const;
+	StatusApplyResult TryAddEffect(StatusEffect effect);
+
 };

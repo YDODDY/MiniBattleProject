@@ -112,9 +112,9 @@ bool Character::IsGuarding() const
 }
 
 
-void Character::ApplyStatus(const StatusEffect& effect)
+StatusApplyResult Character::ApplyStatus(const StatusEffect& effect)
 {
-	status.Add(effect);
+	return status.TryAddEffect(effect);
 }
 
 bool Character::HasStatus(StatusType type) const
@@ -138,7 +138,8 @@ TurnStartResult Character::ProcessTurnStartStatuses()
 		case StatusType::Poison:
 			ReceiveDamage(effect.value);
 			result.damage += effect.value;
-			result.damageType = DamageType::Poison;
+			result.damageType = DamageType::DamageOverTime;
+			result.preventedBy = StatusType::Poison;
 			break;
 		
 		case StatusType::Stun:
@@ -149,6 +150,18 @@ TurnStartResult Character::ProcessTurnStartStatuses()
 		case StatusType::Sleep:
 			result.canAct = false;
 			result.preventedBy = StatusType::Sleep;
+			break;
+
+		case StatusType::Freeze:
+			result.canAct = false;
+			result.preventedBy = StatusType::Freeze;
+			break;
+
+		case StatusType::Burn:
+			result.damage += effect.value;
+			result.damageType = DamageType::DamageOverTime;
+			result.preventedBy = StatusType::Burn;
+			break;
 		}
 	}
 
