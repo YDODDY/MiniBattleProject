@@ -4,7 +4,7 @@
 #include "Event.h"
 #include "EventBus.h"
 #include "AttackData.h"
-
+#include "BattleContextBuilder.h"
 // 객체를 실제로 만들려면 (참조X) 크기, 맴버, 생성자 모두 알아야 하기 때문에 전방 선언 만으로는 모른다. 그래서 include 해줘야 함
 
 
@@ -43,7 +43,11 @@ public:
 
 	void ApplyAttackResult(Character& attacker, Character& target, int damage, const AttackData& attackData, bool isCritical);
 
+	BattleAction RequestAction(Character& actor, Character& target);
+
 private:
 
 	EventBus& eventBus;
+
+	BattleContextBuilder builder;
 };

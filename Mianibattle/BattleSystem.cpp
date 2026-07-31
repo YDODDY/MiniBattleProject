@@ -41,7 +41,7 @@ void BattleSystem::Attack(Character& attacker, Character& target, const AttackDa
 
 	if (CheckIsCritical(attacker, target, attackData.isPowerAttack))
 	{
-		ApplyAttackResult(attacker, target, attackData.damage+10, attackData, true);
+		ApplyAttackResult(attacker, target, attackData.damage + 10, attackData, true);
 		return;
 	}
 
@@ -51,7 +51,7 @@ void BattleSystem::Attack(Character& attacker, Character& target, const AttackDa
 		return;
 	}
 
-	ApplyAttackResult(attacker, target, attackData.damage + 10, attackData, false);
+	ApplyAttackResult(attacker, target, attackData.damage, attackData, false);
 }
 
 void BattleSystem::Heal(Character& character, int healAmount)
@@ -204,18 +204,6 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 		data.statusEffect = effect;
 		break;
 
-		/*
-	case BattleAction::Heal:
-		data.damageType = DamageType::None;
-		data.isPowerAttack = false;
-		break;
-
-	case BattleAction::Guard:
-		data.damageType = DamageType::None;
-		data.isPowerAttack = false;
-		break;
-		*/
-
 	default:
 		break;
 	}
@@ -235,7 +223,7 @@ void BattleSystem::ApplyAttackResult(Character& attacker, Character& target, int
 		attacker.SetUsedPowerAttackLastTurn(2);
 	}
 
-	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, DamageType::Normal,true, attackData.isPowerAttack });
+	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, attackData.damageType, isCritical, attackData.isPowerAttack });
 
 	if (attackData.statusEffect.has_value())
 	{
@@ -248,6 +236,13 @@ void BattleSystem::ApplyAttackResult(Character& attacker, Character& target, int
 	{
 		eventBus.Publish(DeadEvent{ target });
 	}
+}
+
+BattleAction BattleSystem::RequestAction(Character& actor, Character& target)
+{
+	BattleContext context = builder.Build(actor, target);
+
+	return 	actor.ChooseAction(context);
 }
 
 

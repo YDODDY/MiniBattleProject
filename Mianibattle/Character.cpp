@@ -101,6 +101,11 @@ int Character::GetHp() const
 	return hp;
 }
 
+int Character::GetMaxHp() const
+{
+	return maxHp;
+}
+
 int Character::GetDefualtDamage() const
 {
 	return defaultDamage;
@@ -158,6 +163,7 @@ TurnStartResult Character::ProcessTurnStartStatuses()
 			break;
 
 		case StatusType::Burn:
+			ReceiveDamage(effect.value);
 			result.damage += effect.value;
 			result.damageType = DamageType::DamageOverTime;
 			result.preventedBy = StatusType::Burn;
@@ -166,6 +172,11 @@ TurnStartResult Character::ProcessTurnStartStatuses()
 	}
 
 	return result;
+}
+
+const Status& Character::GetStatus() const
+{
+	return status;
 }
 
 

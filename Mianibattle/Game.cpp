@@ -59,7 +59,7 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 
 		if (playerTurn.canAct)
 		{
-			BattleAction playerAction = player.ChooseAction();
+			BattleAction playerAction = battleSystem.RequestAction(player, enemy);
 
 			battleSystem.ExecuteAction(playerAction, player, enemy);
 		}
@@ -74,7 +74,7 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 
 		if (enemyTurn.canAct)
 		{
-			BattleAction enemyAction = enemy.ChooseAction();
+			BattleAction enemyAction = battleSystem.RequestAction(enemy,player);
 			battleSystem.ExecuteAction(enemyAction, enemy, player);
 		}
 

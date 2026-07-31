@@ -4,6 +4,7 @@
 #include "BattleAction.h"
 #include "Status.h"
 #include "TurnStartResult.h"
+#include "BattleContext.h"
 
 class Character
 {
@@ -18,7 +19,7 @@ public :
 
 	virtual ~Character() = default;
 
-	virtual BattleAction ChooseAction() = 0;
+	virtual BattleAction ChooseAction(const BattleContext& context) = 0;
 
 	TurnStartResult BeginTurn();
 
@@ -32,6 +33,7 @@ public :
 	bool IsDead() const;
 	std::string GetName() const;
 	int GetHp() const;
+	int GetMaxHp() const;
 	int GetDefualtDamage() const;
 	bool IsGuarding() const;
 
@@ -40,6 +42,8 @@ public :
 	void RemoveStatus(StatusType type);
 
 	TurnStartResult ProcessTurnStartStatuses();
+
+	const Status& GetStatus() const;
 
 private: 
 	std::string name;

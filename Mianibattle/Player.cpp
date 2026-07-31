@@ -8,7 +8,7 @@ Player::Player(const std::string& name, int hp, int maxHp, int defaultDamage)
 
 }
 
-BattleAction Player::ChooseAction()
+BattleAction Player::ChooseAction(const BattleContext& context)
 {
 	while (true)
 	{

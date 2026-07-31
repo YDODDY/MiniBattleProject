@@ -6,7 +6,7 @@ Enemy::Enemy(const std::string& name, int hp, int maxHp, int defaultDamage)
 
 }
 
-BattleAction Enemy::ChooseAction()
+BattleAction Enemy::ChooseAction(const BattleContext& context)
 {
-	return BattleAction::Attack;
+	return ai.ChooseAction(context);
 }
