@@ -39,5 +39,8 @@ ActionControl BattleContextBuilder::MakeActionControl(const Character& character
 {
     ActionControl control;
 
+    control.canPowerAttack = character.CanUsePowerAttackThisTurn();
+    control.canGuard = !character.IsGuarding();
+
     return control;
 }

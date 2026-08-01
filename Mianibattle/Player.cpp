@@ -22,6 +22,7 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 		std::cout << "6. StunAttack\n";
 		std::cout << "7. FireAttack\n";
 		std::cout << "8. SleepAttack\n";
+		std::cout << "9. FreezeAttack\n";
 		std::cout << ">> ";
 
 		if (!(std::cin >> choice))
@@ -78,6 +79,8 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 			return BattleAction::FireAttack;
 		case 8 : 
 			return BattleAction::SleepAttack;
+		case 9 :
+			return BattleAction::FreezeAttack;
 
 		default:
 			std::cout << "Only Mentioned Command is available. \n";

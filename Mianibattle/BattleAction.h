@@ -2,12 +2,13 @@
 
 enum class BattleAction
 {
-	Attack, 
+	Attack,
 	PowerAttack,
 	PoisonAttack,
 	StunAttack,
 	SleepAttack,
 	FireAttack,
+	FreezeAttack,
 	Heal,
 	Guard
 };
