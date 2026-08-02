@@ -5,6 +5,11 @@ TurnStartResult Character::BeginTurn()
 {
 	TurnStartResult result = ProcessTurnStartStatuses();
 	status.TickTurn();
+	if (cooldownPowerAttack > 0)
+	{
+		SetUsedPowerAttackLastTurn(cooldownPowerAttack-1);
+	}
+
 	return result;
 }
 

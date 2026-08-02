@@ -4,6 +4,13 @@
 #include "BattleContext.h"
 #include <vector>
 
+struct AIMemory
+{
+	BattleAction lastAction = BattleAction::Attack;
+	int consecutiveUseCount = 0;
+	bool hasPreviousAction = false;
+};
+
 struct ActionScore
 {
 	BattleAction action;
@@ -16,6 +23,9 @@ public:
 	BattleAction ChooseAction(const BattleContext& context);
 
 private:
+
+	AIMemory memory;
+	void UpdateMemory(BattleAction selectedAction);
 
 	int EvaluateAttack(const BattleContext& context) const;
 	int EvaluatePowerAttack(const BattleContext& context) const;

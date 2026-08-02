@@ -204,6 +204,14 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 		data.statusEffect = effect;
 		break;
 
+	case BattleAction::FreezeAttack:
+		effect.type = StatusType::Freeze;
+		effect.remainingTurns = 1;
+		effect.value = 0;
+
+		data.statusEffect = effect;
+		break;
+
 	default:
 		break;
 	}

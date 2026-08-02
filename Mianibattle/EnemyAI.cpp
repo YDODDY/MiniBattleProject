@@ -26,8 +26,25 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
     }
 
     PrintDecisionLog(scores, currentMax.action);
+    UpdateMemory(currentMax.action);
 
     return currentMax.action;
+}
+
+void EnemyAI::UpdateMemory(BattleAction selectedAction)
+{
+    if (memory.hasPreviousAction &&
+        memory.lastAction == selectedAction)
+    {
+        ++memory.consecutiveUseCount;
+    }
+    else
+    {
+        memory.lastAction = selectedAction;
+        memory.consecutiveUseCount 1;
+        memory.hasPreviousAction = true;
+    }
+
 }
 
 int EnemyAI::EvaluateAttack(const BattleContext& context) const
