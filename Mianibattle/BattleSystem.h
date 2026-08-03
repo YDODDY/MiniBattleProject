@@ -35,15 +35,19 @@ public:
 
 	void HandleGuardedAttack(Character& attacker, Character& actor);
 
-	bool CheckItWasHit(Character& attacker, Character& target, bool isPowerAttack);
+	bool CheckItWasHit(const Character& attacker, const Character& target, const AttackData& data) const;
 
-	bool CheckIsCritical(Character& attacker, Character& target, bool isPowerAttack);
+	bool CheckIsCritical(const Character& attacker) const;
 
 	AttackData MakeAttackData(Character& character, BattleAction action);
 
 	void ApplyAttackResult(Character& attacker, Character& target, int damage, const AttackData& attackData, bool isCritical);
 
 	BattleAction RequestAction(Character& actor, Character& target);
+
+	int CalculateRawDamage(const Character& attacker, const AttackData& data) const;
+	int CalculateFinalDamage(int rawDamage, const Character& target) const;
+	int ApplyCriticalDamage(int damage, const Character& attacker) const;
 
 private:
 

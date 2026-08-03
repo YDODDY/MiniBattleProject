@@ -13,9 +13,17 @@ Game::Game()
 
 void Game::Run()
 {
-	Player player("Player", 100, 100, 10);
-	Enemy enemy("Enemy", 100, 100, 10);
+	CharacterStats defaultStats;
+	defaultStats.maxHp = 100;
+	defaultStats.attack = 10;
+	defaultStats.defense = 3;
+	defaultStats.accuracy = 0.90f;
+	defaultStats.evasion = 0.05f;
+	defaultStats.criticalChance = 0.10f;
+	defaultStats.criticalDamageMultiplier = 1.50f;
 
+	Player player("Player", defaultStats);
+	Enemy enemy("Enemy", defaultStats);
 	StartBattle(player, enemy);
 	RunBattleLoop(player, enemy);
 	ShowBattleResult(player, enemy);

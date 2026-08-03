@@ -6,13 +6,40 @@
 #include "TurnStartResult.h"
 #include "BattleContext.h"
 
+struct ActionCooldown
+{
+	BattleAction action;
+	int remainingTurns;
+};
+
+struct CharacterStats
+{
+	int maxHp = 100;
+
+	int attack = 10;
+	int defense = 0;
+
+	float accuracy = 0.09f;
+	float evasion = 0.05f;
+
+	float criticalChance = 0.10f;
+	float criticalDamageMultiplier = 1.50f;
+
+	int speed = 0;
+	int luck = 0;
+};
+
 class Character
 {
 
 public : 
 
-	Character(std::string inputName, int inputHp, int inputMaxHP, int inputDefaultDamage)
-		: name(inputName), hp(inputHp), maxHp(inputMaxHP), defaultDamage(inputDefaultDamage)
+	Character(
+		const std::string& name,
+		const CharacterStats& stats)
+		: name(name),
+		selfStats(stats),
+		selfHp(stats.maxHp)
 	{
 	
 	}
@@ -21,20 +48,36 @@ public :
 
 	virtual BattleAction ChooseAction(const BattleContext& context) = 0;
 
+	const CharacterStats& GetStats() const
+	{
+		return selfStats;
+	}
+
 	TurnStartResult BeginTurn();
 
 	int ReceiveDamage(int damage);
 	int Heal(int healAmount);
 	void StartGuarding();
 	void StopGuarding();
-	void SetUsedPowerAttackLastTurn(int coolDown);
-	bool CanUsePowerAttackThisTurn() const;
-	int GetCoolDownCount() const;
+
+	bool CanUseAction(BattleAction action) const;
+	void StartCooldown(BattleAction action, int turns);
+	void TickCooldowns();
+	int GetRemainingCooldown(BattleAction action) const;
+	bool CheckCooldownExist(BattleAction action) const;
+
+	int GetAttack() const;
+	int GetDefense() const;
+	float GetAccuracy() const;
+	float GetEvasion() const;
+	float GetCriticalChance() const;
+	float GetCriticalDamageMultiplier() const;
+
+
 	bool IsDead() const;
 	std::string GetName() const;
 	int GetHp() const;
 	int GetMaxHp() const;
-	int GetDefualtDamage() const;
 	bool IsGuarding() const;
 
 	StatusApplyResult ApplyStatus(const StatusEffect& effect);
@@ -46,12 +89,15 @@ public :
 	const Status& GetStatus() const;
 
 private: 
+
+	int selfHp;
+	bool isGuarding;
+
 	std::string name;
-	int hp;
-	int maxHp;
-	int defaultDamage;
-	bool isGuarding = false;
-	int cooldownPowerAttack = false;
 
 	Status status;
+
+	std::vector<ActionCooldown> cooldowns;
+
+	CharacterStats selfStats;
 };

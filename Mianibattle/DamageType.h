@@ -3,6 +3,9 @@
 enum class DamageType
 {
 	None,
-	Normal,
-	DamageOverTime
+	Direct,
+	DamageOverTime,
+	Counter,
+	SelfInflicted
+
 };

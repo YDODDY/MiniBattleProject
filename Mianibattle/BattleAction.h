@@ -6,9 +6,6 @@ enum class BattleAction
 	PowerAttack,
 	PoisonAttack,
 	StunAttack,
-	SleepAttack,
-	FireAttack,
-	FreezeAttack,
 	Heal,
 	Guard
 };

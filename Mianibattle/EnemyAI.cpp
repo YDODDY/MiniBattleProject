@@ -11,10 +11,7 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
     scores.push_back({ BattleAction::Heal, EvaluateHeal(context) });
     scores.push_back({ BattleAction::PowerAttack, EvaluatePowerAttack(context) });
     scores.push_back({ BattleAction::PoisonAttack, EvaluatePoisonAttack(context) });
-    scores.push_back({ BattleAction::FireAttack, EvaluateFireAttack(context) });
-    scores.push_back({ BattleAction::FreezeAttack, EvaluateFreezeAttack(context) });
     scores.push_back({ BattleAction::StunAttack, EvaluateStunAttack(context) });
-    scores.push_back({ BattleAction::SleepAttack, EvaluateSleepAttack(context) });
     scores.push_back({ BattleAction::Guard, EvaluateGuard(context) });
 
     ActionScore currentMax = scores[0];
@@ -41,7 +38,7 @@ void EnemyAI::UpdateMemory(BattleAction selectedAction)
     else
     {
         memory.lastAction = selectedAction;
-        memory.consecutiveUseCount 1;
+        memory.consecutiveUseCount += 1;
         memory.hasPreviousAction = true;
     }
 
@@ -131,84 +128,6 @@ int EnemyAI::EvaluateStunAttack(const BattleContext& context) const
     return score;
 }
 
-int EnemyAI::EvaluateFireAttack(const BattleContext& context) const
-{
-    if (context.target.status.burned) return 0;
-
-    int score = 30;
-
-    const float targetHpRatio = GetHpRatio(context.target);
-
-    // 중반 즈음 압박
-    if (targetHpRatio <= 0.7f &&
-        targetHpRatio >= 0.35f)
-    {
-        score += 35;
-    }
-
-    // 상대가 거의 죽어가면 도트뎀 보다 직접 타격이 좋음
-    if (targetHpRatio < 0.25f) score -= 30;
-
-    return score;
-}
-
-int EnemyAI::EvaluateSleepAttack(const BattleContext& context) const
-{
-    if (HasActionControlStatus(context.target.status))
-    {
-        return 0;
-    }
-
-    int score = 20;
-
-    const float selfHpRatio = GetHpRatio(context.self);
-    const float targetHpRatio = GetHpRatio(context.target);
-
-    // 중간 정도로 다쳤을 때 숨고르기 용
-    if (selfHpRatio <= 0.6f &&
-        selfHpRatio > 0.3f)
-    {
-        score += 35;
-    }
-
-    // 상대가 아직 오래 살아남을 상황이면 수면 가치 증가
-    if (targetHpRatio >= 0.6f) score += 15;
-    // 본인이 거의 죽기 직전이면 sleep 보다 heal, stun 우선
-    if (selfHpRatio <= 0.25f) score -= 20;
-
-    return score;
-}
-
-int EnemyAI::EvaluateFreezeAttack(const BattleContext& context) const
-{
-    if (HasActionControlStatus(context.target.status))
-    {
-        return 0;
-    }
-
-    int score = 30;
-
-    const float selfHpRatio =
-        GetHpRatio(context.self);
-
-    const float targetHpRatio =
-        GetHpRatio(context.target);
-
-    // 본인이 위험하면 상대 행동 차단 가치 증가
-    if (selfHpRatio <= 0.4f)
-        score += 25;
-
-    // 상대 체력이 높으면 제어기 가치 있음
-    if (targetHpRatio >= 0.5f)
-        score += 20;
-
-    // 상대가 Burn 상태면 Freeze로 덮어쓰건 손해
-    if (context.target.status.burned)
-        score -= 40;
-
-    return score;
-}
-
 bool EnemyAI::HasActionControlStatus(const StatusSnapshot& status) const
 {
     return status.stunned
@@ -240,15 +159,6 @@ const char* EnemyAI::ToString(BattleAction action) const
 
     case BattleAction::StunAttack:
         return "Stun";
-
-    case BattleAction::SleepAttack:
-        return "Sleep";
-
-    case BattleAction::FireAttack:
-        return "Fire";
-
-    case BattleAction::FreezeAttack:
-        return "Freeze";
 
     case BattleAction::Heal:
         return "Heal";

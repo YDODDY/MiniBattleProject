@@ -2,11 +2,6 @@
 #include <iostream>
 #include <limits>
 
-Player::Player(const std::string& name, int hp, int maxHp, int defaultDamage)
-	: Character(name, hp, maxHp, defaultDamage)
-{
-
-}
 
 BattleAction Player::ChooseAction(const BattleContext& context)
 {
@@ -20,9 +15,6 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 		std::cout << "4. Heal\n";
 		std::cout << "5. Guard\n";
 		std::cout << "6. StunAttack\n";
-		std::cout << "7. FireAttack\n";
-		std::cout << "8. SleepAttack\n";
-		std::cout << "9. FreezeAttack\n";
 		std::cout << ">> ";
 
 		if (!(std::cin >> choice))
@@ -40,7 +32,7 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 			continue;
 		}
 
-		if (choice == 2 && !CanUsePowerAttackThisTurn())
+		if (choice == 2 && !CanUseAction(BattleAction::PowerAttack))
 		{
 			std::cout << "Can not use PowerAttack now! \n";
 
@@ -75,12 +67,6 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 			return BattleAction::Guard;
 		case 6 :
 			return BattleAction::StunAttack;
-		case 7 : 
-			return BattleAction::FireAttack;
-		case 8 : 
-			return BattleAction::SleepAttack;
-		case 9 :
-			return BattleAction::FreezeAttack;
 
 		default:
 			std::cout << "Only Mentioned Command is available. \n";

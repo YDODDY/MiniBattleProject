@@ -11,7 +11,7 @@ struct DamagedEvent
 	DamageType damageType;
 
 	bool isCritical;
-	bool isPowerAttack;
+	BattleAction sourceAction;
 };
 
 struct HealedEvent
@@ -38,7 +38,7 @@ struct MissedEvent
 	Character& attacker;
 	Character& target;
 
-	bool isPowerAttack;
+	BattleAction sourceAction;
 };
 
 struct AppliedStatusEvent

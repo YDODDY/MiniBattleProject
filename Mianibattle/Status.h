@@ -22,10 +22,7 @@ enum class StatusType
 {
 	None,
 	Poison,
-	Freeze,
-	Burn,
 	Stun,
-	Sleep
 };
 
 std::string ToString(StatusType type);

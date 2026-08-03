@@ -5,10 +5,16 @@
 
 struct AttackData
 {
-	int damage;
-	DamageType damageType;
 
-	bool isPowerAttack;
+	BattleAction action;
 
-	std::optional<StatusEffect> statusEffect;
+	float damageMultiplier = 0.0f;
+	float hitChanceModifier = 0.0f;
+
+	int cooldownTurns = 0;
+
+	StatusType appliedStatus = StatusType::None;
+	int statusTurns = 0;
+	float statusValue = 0.0f;
+
 };

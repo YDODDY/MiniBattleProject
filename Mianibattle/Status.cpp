@@ -83,12 +83,9 @@ StatusGroup Status::GetStatusGroup(StatusType type) const
 	switch (type)
 	{
 	case StatusType::Stun:
-	case StatusType::Sleep:
 		return StatusGroup::ActionControl;
 
 	case StatusType::Poison:
-	case StatusType::Freeze:
-	case StatusType::Burn:
 		return StatusGroup::ElementalState;
 
 	default:
@@ -153,15 +150,6 @@ std::string ToString(StatusType type)
 
 	case StatusType::Stun:
 		return "Stuned";
-
-	case StatusType::Sleep:
-		return "asleep";
-
-	case StatusType::Burn:
-		return "burned";
-
-	case StatusType::Freeze:
-		return "freezed";
 
 	default:
 		return "None";

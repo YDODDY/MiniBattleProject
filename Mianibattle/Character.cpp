@@ -1,14 +1,12 @@
 #include "Character.h"
 #include <iostream>
+#include <algorithm>
 
 TurnStartResult Character::BeginTurn()
 {
 	TurnStartResult result = ProcessTurnStartStatuses();
 	status.TickTurn();
-	if (cooldownPowerAttack > 0)
-	{
-		SetUsedPowerAttackLastTurn(cooldownPowerAttack-1);
-	}
+	TickCooldowns();
 
 	return result;
 }
@@ -25,39 +23,33 @@ int Character::ReceiveDamage(int damage)
 		return 0;
 	}
 
-	int previousHp = hp;
-	hp -= damage;
+	int previousHp = selfHp;
+	selfHp -= damage;
 
-	if (hp <= 0)
+	if (selfHp <= 0)
 	{
-		hp = 0;
+		selfHp = 0;
 	}
 
-	return previousHp - hp;
+	return previousHp - selfHp;
 
 }
 
 int Character::Heal(int healAmount)
 {
-	if (IsDead() || hp == maxHp)
-	{
+	if (IsDead() || selfHp == selfStats.maxHp)
 		return 0;
-	}
 
 	if (healAmount <= 0)
-	{
 		return 0;
-	}
 
-	int previousHp = hp;
-	hp += healAmount;
-	
-	if (hp >= maxHp)
-	{
-		hp = maxHp;
-	}
+	int previousHp = selfHp;
+	selfHp += healAmount;
 
-	return hp - previousHp;
+	if (selfHp >= selfStats.maxHp)
+		selfHp = selfStats.maxHp;
+
+	return selfHp - previousHp;
 }
 
 void Character::StartGuarding()
@@ -76,24 +68,106 @@ void Character::StopGuarding()
 	isGuarding = false;
 }
 
-void Character::SetUsedPowerAttackLastTurn(int coolDown)
+bool Character::CanUseAction(BattleAction action) const
 {
-	cooldownPowerAttack = coolDown;
+	return GetRemainingCooldown(action) <= 0;
 }
 
-bool Character::CanUsePowerAttackThisTurn() const
+void Character::StartCooldown(BattleAction action, int turns)
 {
-	return cooldownPowerAttack == 0;
+	if (turns <= 0)
+		return;
+
+	for (ActionCooldown& cooldown : cooldowns)
+	{
+		if (cooldown.action == action)
+		{
+			cooldown.remainingTurns = turns;
+			return;
+		}
+	}
+
+	cooldowns.push_back({action, turns});
 }
 
-int Character::GetCoolDownCount() const
+void Character::TickCooldowns()
 {
-	return cooldownPowerAttack;
+	for (ActionCooldown& cooldown : cooldowns)
+	{
+		cooldown.remainingTurns--;
+	}
+
+	cooldowns.erase(
+		std::remove_if(
+			cooldowns.begin(),
+			cooldowns.end(),
+			[](const ActionCooldown& cooldown)
+			{
+				return cooldown.remainingTurns <= 0;
+			}),
+		cooldowns.end());
+
+}
+
+int Character::GetRemainingCooldown(BattleAction action) const
+{
+	for (auto& cooldown : cooldowns)
+	{
+		if (cooldown.action == action)
+		{
+			return cooldown.remainingTurns;
+		}
+	}
+
+	return 0;
+}
+
+bool Character::CheckCooldownExist(BattleAction action) const
+{
+	for (auto& cooldown : cooldowns)
+	{
+		if (cooldown.action == action)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int Character::GetAttack() const
+{
+	return selfStats.attack;
+}
+
+int Character::GetDefense() const
+{
+	return selfStats.defense;
+}
+
+float Character::GetAccuracy() const
+{
+	return selfStats.accuracy;
+}
+
+float Character::GetEvasion() const
+{
+	return selfStats.evasion;
+}
+
+float Character::GetCriticalChance() const
+{
+	return selfStats.criticalChance;
+}
+
+float Character::GetCriticalDamageMultiplier() const
+{
+	return selfStats.criticalDamageMultiplier;
 }
 
 bool Character::IsDead() const
 {
-	return hp <= 0;
+	return selfHp <= 0;
 }
 
 std::string Character::GetName() const
@@ -103,17 +177,12 @@ std::string Character::GetName() const
 
 int Character::GetHp() const
 {
-	return hp;
+	return selfHp;
 }
 
 int Character::GetMaxHp() const
 {
-	return maxHp;
-}
-
-int Character::GetDefualtDamage() const
-{
-	return defaultDamage;
+	return selfStats.maxHp;
 }
 
 bool Character::IsGuarding() const
@@ -155,23 +224,6 @@ TurnStartResult Character::ProcessTurnStartStatuses()
 		case StatusType::Stun:
 			result.canAct = false;
 			result.preventedBy = StatusType::Stun;
-			break;
-
-		case StatusType::Sleep:
-			result.canAct = false;
-			result.preventedBy = StatusType::Sleep;
-			break;
-
-		case StatusType::Freeze:
-			result.canAct = false;
-			result.preventedBy = StatusType::Freeze;
-			break;
-
-		case StatusType::Burn:
-			ReceiveDamage(effect.value);
-			result.damage += effect.value;
-			result.damageType = DamageType::DamageOverTime;
-			result.preventedBy = StatusType::Burn;
 			break;
 		}
 	}

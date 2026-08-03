@@ -62,7 +62,8 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 
 void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
 {
-	if (event.isPowerAttack)
+	if (event.sourceAction ==
+		BattleAction::PowerAttack)
 	{
 		std::cout << "[PowerAttack!]\n";
 
@@ -125,7 +126,8 @@ void ConsoleLogSystem::OnGuardAttack(const GuardEvent& event)
 void ConsoleLogSystem::OnMissedAttack(const MissedEvent& event)
 {
 	std::cout << event.attacker.GetName() << "'s ";
-	if (event.isPowerAttack)
+	if (event.sourceAction ==
+		BattleAction::PowerAttack)
 	{
 		std::cout << "Power "; 
 	}
@@ -172,13 +174,6 @@ void ConsoleLogSystem::OnDamageOverTime(const DamageOverTimeEvent& event)
 			<< " takes "
 			<< event.damage
 			<< " poison damage.\n";
-		break;
-
-	case StatusType::Burn:
-		std::cout << event.target.GetName()
-			<< " takes "
-			<< event.damage
-			<< " burn damage.\n";
 		break;
 
 	default:

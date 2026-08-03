@@ -33,9 +33,6 @@ private:
 	int EvaluatePoisonAttack(const BattleContext& context) const;
 	int EvaluateGuard(const BattleContext& context) const;
 	int EvaluateStunAttack(const BattleContext& context) const;
-	int EvaluateFireAttack(const BattleContext& context) const;
-	int EvaluateSleepAttack(const BattleContext& context) const;
-	int EvaluateFreezeAttack(const BattleContext& context) const;
 
 	bool HasActionControlStatus(const StatusSnapshot& status) const;
 	float GetHpRatio(const CharacterSnapshot& character) const;

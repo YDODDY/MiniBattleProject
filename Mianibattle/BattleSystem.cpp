@@ -3,6 +3,7 @@
 #include "Event.h"
 #include <iostream>
 #include <random>
+#include <cstdlib>
 
 TurnStartResult BattleSystem::StartTurn(Character& character)
 {
@@ -30,28 +31,30 @@ TurnStartResult BattleSystem::StartTurn(Character& character)
 
 void BattleSystem::Attack(Character& attacker, Character& target, const AttackData& attackData)
 {
-	if (target.IsDead())
-		return;
-
-	if (!CheckItWasHit(attacker, target, attackData.isPowerAttack))
+	if (!attacker.CanUseAction(attackData.action))
 	{
-		eventBus.Publish(MissedEvent{ attacker, target, attackData.isPowerAttack });
 		return;
 	}
 
-	if (CheckIsCritical(attacker, target, attackData.isPowerAttack))
+	attacker.StartCooldown(attackData.action, attackData.cooldownTurns);
+
+	if (!CheckItWasHit(attacker, target, attackData))
 	{
-		ApplyAttackResult(attacker, target, attackData.damage + 10, attackData, true);
+		eventBus.Publish(MissedEvent{attacker, target, attackData.action});
 		return;
 	}
 
-	if (target.IsGuarding() && !attackData.isPowerAttack)
-	{	
-		HandleGuardedAttack(attacker, target);
-		return;
+	int damage = CalculateRawDamage(attacker, attackData);
+	const bool isCritical =	CheckIsCritical(attacker);
+
+	if (isCritical)
+	{
+		damage = ApplyCriticalDamage(damage, attacker);
 	}
 
-	ApplyAttackResult(attacker, target, attackData.damage, attackData, false);
+	damage = CalculateFinalDamage(damage, target);
+
+	ApplyAttackResult(attacker, target, damage, attackData, isCritical);
 }
 
 void BattleSystem::Heal(Character& character, int healAmount)
@@ -66,30 +69,17 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 {
 	switch (action)
 	{
-		/*
-	case BattleAction::Attack:
-		Attack(actor, target, data);
-		break;
-
-	case BattleAction::PowerAttack:
-		Attack(actor, target, data);
-		break;
-
-	case BattleAction::PoisonAttack:
-		Attack(actor, target, data);
-		break;
-		*/
-
 	case BattleAction::Heal:
-		Heal(actor, 10);
+		Heal(actor, 20);
 		break;
 
 	case BattleAction::Guard:
 		Guard(actor);
 		break;
 
+
 	default:
-		AttackData data = MakeAttackData(actor, action);
+		const AttackData data = MakeAttackData(actor, action);
 		Attack(actor, target, data);
 		break;
 	}
@@ -118,98 +108,63 @@ void BattleSystem::HandleGuardedAttack(Character& attacker, Character& defender)
 	defender.StopGuarding();
 }
 
-bool BattleSystem::CheckItWasHit(Character& attacker, Character& target, bool isPowerAttack)
+bool BattleSystem::CheckItWasHit(const Character& attacker, const Character& target, const AttackData& data) const
 {
-	int accuracyPercent = 90;
-	if (isPowerAttack)
-		accuracyPercent = 70;
-	
-	int num; 
-	num = rand() % 100;
-	if (num < accuracyPercent)
-	{
-		return true;
-	}
+	float hitChance = attacker.GetAccuracy() +
+		data.hitChanceModifier - target.GetEvasion();
 
-	return false;
+	hitChance = std::clamp(hitChance, 0.05f, 0.95f);
+
+	const float roll = static_cast<float>(rand()) /
+		static_cast<float>(RAND_MAX);
+
+	return roll < hitChance;
 }
 
-bool BattleSystem::CheckIsCritical(Character& attacker, Character& target, bool isPowerAttack)
+bool BattleSystem::CheckIsCritical(const Character& attacker) const
 {
-	int criticalPercent = 40;
-	if (isPowerAttack)
-		criticalPercent = 60;
+	const float roll =
+		static_cast<float>(rand()) /
+		static_cast<float>(RAND_MAX);
 
-	int num;
-	num = rand() % 100;
-	if (num < criticalPercent)
-	{
-		return true;
-	}
-
-	return false;
+	return roll < attacker.GetCriticalChance();
 }
 
 AttackData BattleSystem::MakeAttackData(Character& character, BattleAction action)
 {
 	AttackData data;
-	data.damage = character.GetDefualtDamage();
-	data.damageType = DamageType::Normal;
-	data.isPowerAttack = false;
-
-	StatusEffect effect;
-	effect.type = StatusType::None;
-	effect.remainingTurns = 0;
-	effect.value = 0;
+	data.action = action;
 
 	switch (action)
 	{
 	case BattleAction::Attack:
+		data.damageMultiplier = 1.0f;
+		data.hitChanceModifier = 0.0f;
+		data.cooldownTurns = 0;
 		break;
 
 	case BattleAction::PowerAttack:
-		data.isPowerAttack = true;
+		data.damageMultiplier = 2.2f;
+		data.hitChanceModifier = -0.2f;
+		data.cooldownTurns = 4;
 		break;
 
 	case BattleAction::PoisonAttack:
-		data.damageType = DamageType::DamageOverTime;
-		effect.type = StatusType::Poison;
-		effect.remainingTurns = 3;
-		effect.value = 1;
-
-		data.statusEffect = effect;
+		data.damageMultiplier = 0.7f;
+		data.hitChanceModifier = -0.05f;
+		data.cooldownTurns = 5;
+		data.appliedStatus = StatusType::Poison;
+		data.statusTurns = 3;
+		data.statusValue = 0.2f;
 		break;
 
 	case BattleAction::StunAttack:
-		effect.type = StatusType::Stun;
-		effect.remainingTurns = 1;
+		data.damageMultiplier = 0.4f;
+		data.hitChanceModifier = -0.15f;
+		data.cooldownTurns = 5;
 
-		data.statusEffect = effect;
-		break;
-
-	case BattleAction::SleepAttack:
-		effect.type = StatusType::Sleep;
-		effect.remainingTurns = 2;
-		effect.value = 0;
-
-		data.statusEffect = effect;
-		break;
-
-	case BattleAction::FireAttack:
-		data.damageType = DamageType::DamageOverTime;
-		effect.type = StatusType::Burn;
-		effect.remainingTurns = 3;
-		effect.value = 3;
-
-		data.statusEffect = effect;
-		break;
-
-	case BattleAction::FreezeAttack:
-		effect.type = StatusType::Freeze;
-		effect.remainingTurns = 1;
-		effect.value = 0;
-
-		data.statusEffect = effect;
+		data.appliedStatus = StatusType::Stun;
+		data.statusTurns = 1;
 		break;
 
 	default:
@@ -221,29 +176,30 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 
 void BattleSystem::ApplyAttackResult(Character& attacker, Character& target, int damage, const AttackData& attackData, bool isCritical)
 {
-	const bool wasAlive = !target.IsDead();
-	const int appliedDamage = target.ReceiveDamage(damage);
+    const int appliedDamage = target.ReceiveDamage(damage);
+	
+	eventBus.Publish(DamagedEvent{ attacker, target, 
+		appliedDamage, DamageType::Direct, 
+		isCritical, attackData.action });
 
-	if (appliedDamage <= 0) { return; }
-
-	if (attackData.isPowerAttack)
+	if (attackData.appliedStatus != StatusType::None)
 	{
-		attacker.SetUsedPowerAttackLastTurn(2);
+		StatusEffect effect;
+		effect.type = attackData.appliedStatus;
+		effect.remainingTurns = attackData.statusTurns;
+
+		effect.value = static_cast<int>(
+			attacker.GetAttack() * attackData.statusValue);
+		StatusApplyResult result = target.ApplyStatus(effect);
+
+		eventBus.Publish(AppliedStatusEvent{target, effect, result});
 	}
 
-	eventBus.Publish(DamagedEvent{ attacker , target, appliedDamage, attackData.damageType, isCritical, attackData.isPowerAttack });
-
-	if (attackData.statusEffect.has_value())
+	if (target.IsDead())
 	{
-		StatusApplyResult result;
-		result = target.ApplyStatus(*attackData.statusEffect);
-		eventBus.Publish(AppliedStatusEvent{ target, *attackData.statusEffect, result });
+		eventBus.Publish(DeadEvent{target});
 	}
 
-	if (wasAlive && target.IsDead())
-	{
-		eventBus.Publish(DeadEvent{ target });
-	}
 }
 
 BattleAction BattleSystem::RequestAction(Character& actor, Character& target)
@@ -251,6 +207,23 @@ BattleAction BattleSystem::RequestAction(Character& actor, Character& target)
 	BattleContext context = builder.Build(actor, target);
 
 	return 	actor.ChooseAction(context);
+}
+
+int BattleSystem::CalculateRawDamage(const Character& attacker, const AttackData& data) const
+{
+	return static_cast<int>(
+		attacker.GetAttack() * data.damageMultiplier);
+}
+
+int BattleSystem::CalculateFinalDamage(int rawDamage, const Character& target) const
+{
+	return std::max(1, rawDamage - target.GetDefense());
+}
+
+int BattleSystem::ApplyCriticalDamage(int damage, const Character& attacker) const
+{
+	return static_cast<int>(
+		damage * attacker.GetCriticalDamageMultiplier());
 }
 
 

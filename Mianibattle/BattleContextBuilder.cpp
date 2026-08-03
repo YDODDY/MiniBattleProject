@@ -28,9 +28,6 @@ StatusSnapshot BattleContextBuilder::MakeStatusSnapshot(const Character& charact
 
     snapshot.poisoned = status.Find(StatusType::Poison) != nullptr;
     snapshot.stunned = status.Find(StatusType::Stun) != nullptr;
-    snapshot.burned = status.Find(StatusType::Burn) != nullptr;
-    snapshot.frozen = status.Find(StatusType::Freeze) != nullptr;
-    snapshot.sleeping = status.Find(StatusType::Sleep) != nullptr;
 
     return snapshot;
 }
@@ -39,7 +36,7 @@ ActionControl BattleContextBuilder::MakeActionControl(const Character& character
 {
     ActionControl control;
 
-    control.canPowerAttack = character.CanUsePowerAttackThisTurn();
+    control.canPowerAttack = character.CanUseAction(BattleAction::PowerAttack);
     control.canGuard = !character.IsGuarding();
 
     return control;

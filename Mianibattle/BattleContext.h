@@ -28,9 +28,7 @@ struct ActionControl
 
 	bool canPoisonAttack = true;
 	bool canStunAttack = true;
-	bool canSleepAttack = true;
-	bool canFireAttack = true;
-	bool canFreezeAttack = true;
+
 };
 
 
