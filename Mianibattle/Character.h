@@ -19,7 +19,7 @@ struct CharacterStats
 	int attack = 10;
 	int defense = 0;
 
-	float accuracy = 0.09f;
+	float accuracy = 0.90f;
 	float evasion = 0.05f;
 
 	float criticalChance = 0.10f;
@@ -37,9 +37,10 @@ public :
 	Character(
 		const std::string& name,
 		const CharacterStats& stats)
-		: name(name),
-		selfStats(stats),
-		selfHp(stats.maxHp)
+		: selfHp(stats.maxHp),
+		isGuarding(false),
+		name(name),
+		selfStats(stats)
 	{
 	
 	}
@@ -64,7 +65,6 @@ public :
 	void StartCooldown(BattleAction action, int turns);
 	void TickCooldowns();
 	int GetRemainingCooldown(BattleAction action) const;
-	bool CheckCooldownExist(BattleAction action) const;
 
 	int GetAttack() const;
 	int GetDefense() const;
@@ -91,7 +91,7 @@ public :
 private: 
 
 	int selfHp;
-	bool isGuarding;
+	bool isGuarding = false;
 
 	std::string name;
 

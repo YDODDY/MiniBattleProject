@@ -3,11 +3,7 @@
 struct StatusSnapshot
 {
 	bool poisoned;
-	bool burned;
 	bool stunned;
-	bool sleeping;
-	bool frozen;
-
 };
 
 struct CharacterSnapshot
@@ -22,13 +18,11 @@ struct ActionControl
 {
 	bool canAttack = true;
 	bool canPowerAttack = true;
-
-	bool canHeal = true;
-	bool canGuard = true;
-
 	bool canPoisonAttack = true;
 	bool canStunAttack = true;
 
+	bool canHeal = true;
+	bool canGuard = true;
 };
 
 

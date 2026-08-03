@@ -122,18 +122,6 @@ int Character::GetRemainingCooldown(BattleAction action) const
 	return 0;
 }
 
-bool Character::CheckCooldownExist(BattleAction action) const
-{
-	for (auto& cooldown : cooldowns)
-	{
-		if (cooldown.action == action)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
 
 int Character::GetAttack() const
 {

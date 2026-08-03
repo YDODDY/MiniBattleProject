@@ -37,7 +37,10 @@ ActionControl BattleContextBuilder::MakeActionControl(const Character& character
     ActionControl control;
 
     control.canPowerAttack = character.CanUseAction(BattleAction::PowerAttack);
-    control.canGuard = !character.IsGuarding();
-
+    control.canPoisonAttack = character.CanUseAction(BattleAction::PoisonAttack);
+    control.canStunAttack = character.CanUseAction(BattleAction::StunAttack);   
+    control.canHeal = character.CanUseAction(BattleAction::Heal);
+    control.canGuard = character.CanUseAction(BattleAction::Guard);    
+    
     return control;
 }

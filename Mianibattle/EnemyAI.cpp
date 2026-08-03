@@ -8,11 +8,32 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
     std::vector<ActionScore> scores;
     
     scores.push_back({ BattleAction::Attack, EvaluateAttack(context) });
-    scores.push_back({ BattleAction::Heal, EvaluateHeal(context) });
-    scores.push_back({ BattleAction::PowerAttack, EvaluatePowerAttack(context) });
-    scores.push_back({ BattleAction::PoisonAttack, EvaluatePoisonAttack(context) });
-    scores.push_back({ BattleAction::StunAttack, EvaluateStunAttack(context) });
-    scores.push_back({ BattleAction::Guard, EvaluateGuard(context) });
+   
+    if (context.actionControl.canPowerAttack)
+    {
+        scores.push_back({ BattleAction::PowerAttack, EvaluatePowerAttack(context) });
+    }
+
+    if (context.actionControl.canPoisonAttack)
+    {
+        scores.push_back({ BattleAction::PoisonAttack, EvaluatePoisonAttack(context) });
+    }
+
+    if (context.actionControl.canStunAttack)
+    {
+        scores.push_back({ BattleAction::StunAttack, EvaluateStunAttack(context) });
+    }
+
+    if (context.actionControl.canHeal)
+    {
+        scores.push_back({ BattleAction::Heal, EvaluateHeal(context) });
+    }
+
+    if (context.actionControl.canGuard)
+    {
+        scores.push_back({ BattleAction::Guard, EvaluateGuard(context) });
+    }
+
 
     ActionScore currentMax = scores[0];
 
@@ -38,7 +59,7 @@ void EnemyAI::UpdateMemory(BattleAction selectedAction)
     else
     {
         memory.lastAction = selectedAction;
-        memory.consecutiveUseCount += 1;
+        memory.consecutiveUseCount = 1;
         memory.hasPreviousAction = true;
     }
 
@@ -79,7 +100,8 @@ int EnemyAI::EvaluateHeal(const BattleContext& context) const
 
 int EnemyAI::EvaluatePoisonAttack(const BattleContext& context) const
 {
-    if (context.target.status.poisoned) return 0;
+    if (context.target.status.poisoned ||
+        !context.actionControl.canPoisonAttack) return 0;
 
     int score = 25;
 
@@ -108,10 +130,8 @@ int EnemyAI::EvaluateGuard(const BattleContext& context) const
 
 int EnemyAI::EvaluateStunAttack(const BattleContext& context) const
 {
-    if (HasActionControlStatus(context.target.status))
-    {
-        return 0;
-    }
+    if (HasActionControlStatus(context.target.status) ||
+        !context.actionControl.canStunAttack) return 0;
 
     int score = 30;
 
@@ -130,9 +150,7 @@ int EnemyAI::EvaluateStunAttack(const BattleContext& context) const
 
 bool EnemyAI::HasActionControlStatus(const StatusSnapshot& status) const
 {
-    return status.stunned
-        || status.sleeping
-        || status.frozen;
+    return status.stunned;
 }
 
 float EnemyAI::GetHpRatio(const CharacterSnapshot& character) const

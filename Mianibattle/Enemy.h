@@ -11,7 +11,6 @@ public :
 	Enemy(const std::string& name, const CharacterStats& stats)
 		: Character(name, stats)
 	{
-
 	}
 
 	BattleAction ChooseAction(const BattleContext& context) override;

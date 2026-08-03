@@ -32,22 +32,6 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 			continue;
 		}
 
-		if (choice == 2 && !CanUseAction(BattleAction::PowerAttack))
-		{
-			std::cout << "Can not use PowerAttack now! \n";
-
-			// cin fail 상태 해제
-			std::cin.clear();
-
-			// 입력줄 남아 있는 잘못된 내용 제거
-			std::cin.ignore(
-				std::numeric_limits<std::streamsize>::max(),
-				'\n');
-
-			continue;
-		}
-
-
 		// 숫자 뒤 남은 입력도 제거
 		std::cin.ignore(
 			std::numeric_limits<std::streamsize>::max(),
@@ -57,17 +41,46 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 		{
 		case 1:
 			return BattleAction::Attack;
-		case 2:
-			return BattleAction::PowerAttack;
-		case 3:
-			return BattleAction::PoisonAttack;
-		case 4 : 
-			return BattleAction::Heal;
-		case 5 :
-			return BattleAction::Guard;
-		case 6 :
-			return BattleAction::StunAttack;
 
+		case 2:
+			if (!CanUseAction(BattleAction::PowerAttack))
+			{
+				std::cout << "PowerAttack is on cooldown.\n";
+				break;
+			}
+			return BattleAction::PowerAttack;
+
+		case 3:
+			if (!CanUseAction(BattleAction::PoisonAttack))
+			{
+				std::cout << "PoisonAttack is on cooldown.\n";
+				break;
+			}
+			return BattleAction::PoisonAttack;
+
+		case 4:
+			if (!CanUseAction(BattleAction::Heal))
+			{
+				std::cout << "Heal is on cooldown.\n";
+				break;
+			}
+			return BattleAction::Heal;
+
+		case 5:
+			if (!CanUseAction(BattleAction::Guard))
+			{
+				std::cout << "Guard is on cooldown.\n";
+				break;
+			}
+			return BattleAction::Guard;
+
+		case 6:
+			if (!CanUseAction(BattleAction::StunAttack))
+			{
+				std::cout << "StunAttack is on cooldown.\n";
+				break;
+			}
+			return BattleAction::StunAttack;
 		default:
 			std::cout << "Only Mentioned Command is available. \n";
 			break;

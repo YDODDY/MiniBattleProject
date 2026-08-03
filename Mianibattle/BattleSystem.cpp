@@ -2,8 +2,8 @@
 #include "Character.h"
 #include "Event.h"
 #include <iostream>
-#include <random>
 #include <cstdlib>
+#include <algorithm>
 
 TurnStartResult BattleSystem::StartTurn(Character& character)
 {
@@ -44,6 +44,12 @@ void BattleSystem::Attack(Character& attacker, Character& target, const AttackDa
 		return;
 	}
 
+	if (target.IsGuarding())
+	{
+		HandleGuardedAttack(attacker, target);
+		return;
+	}
+
 	int damage = CalculateRawDamage(attacker, attackData);
 	const bool isCritical =	CheckIsCritical(attacker);
 
@@ -70,11 +76,17 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 	switch (action)
 	{
 	case BattleAction::Heal:
+		if (!actor.CanUseAction(BattleAction::Heal)) return;
+
 		Heal(actor, 20);
+		actor.StartCooldown(BattleAction::Heal, 4);
 		break;
 
 	case BattleAction::Guard:
+		if (!actor.CanUseAction(BattleAction::Guard)) return;
+
 		Guard(actor);
+		actor.StartCooldown(BattleAction::Guard, 2);
 		break;
 
 
@@ -188,8 +200,9 @@ void BattleSystem::ApplyAttackResult(Character& attacker, Character& target, int
 		effect.type = attackData.appliedStatus;
 		effect.remainingTurns = attackData.statusTurns;
 
-		effect.value = static_cast<int>(
-			attacker.GetAttack() * attackData.statusValue);
+		effect.value = std::max(1, static_cast<int>(
+			attacker.GetAttack() * attackData.statusValue));
+
 		StatusApplyResult result = target.ApplyStatus(effect);
 
 		eventBus.Publish(AppliedStatusEvent{target, effect, result});
@@ -197,9 +210,8 @@ void BattleSystem::ApplyAttackResult(Character& attacker, Character& target, int
 
 	if (target.IsDead())
 	{
-		eventBus.Publish(DeadEvent{target});
+		eventBus.Publish(DeadEvent{ target });
 	}
-
 }
 
 BattleAction BattleSystem::RequestAction(Character& actor, Character& target)
