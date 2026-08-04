@@ -15,6 +15,8 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 		std::cout << "4. Heal\n";
 		std::cout << "5. Guard\n";
 		std::cout << "6. StunAttack\n";
+		std::cout << "7. AttackBuff\n";
+		std::cout << "8. DefenseBuff\n";
 		std::cout << ">> ";
 
 		if (!(std::cin >> choice))
@@ -81,6 +83,21 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 				break;
 			}
 			return BattleAction::StunAttack;
+		case 7:
+			if (!CanUseAction(BattleAction::AttackBuff))
+			{
+				std::cout << "AttackBuff is on cooldown.\n";
+				break;
+			}
+			return BattleAction::AttackBuff;
+		case 8:
+			if (!CanUseAction(BattleAction::DefenseBuff))
+			{
+				std::cout << "DefenseBuff is on cooldown.\n";
+				break;
+			}
+			return BattleAction::DefenseBuff;
+				
 		default:
 			std::cout << "Only Mentioned Command is available. \n";
 			break;

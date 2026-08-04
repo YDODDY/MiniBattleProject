@@ -88,6 +88,10 @@ StatusGroup Status::GetStatusGroup(StatusType type) const
 	case StatusType::Poison:
 		return StatusGroup::ElementalState;
 
+	case StatusType::AttackUp:
+	case StatusType::DefenseUp:
+		return StatusGroup::StatModifier;
+
 	default:
 		return StatusGroup::Independent;
 	}
@@ -150,6 +154,12 @@ std::string ToString(StatusType type)
 
 	case StatusType::Stun:
 		return "Stuned";
+	
+	case StatusType::AttackUp:
+		return "AttackUped";
+
+	case StatusType::DefenseUp:
+		return "DefenseUped";
 
 	default:
 		return "None";

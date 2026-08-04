@@ -34,6 +34,15 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
         scores.push_back({ BattleAction::Guard, EvaluateGuard(context) });
     }
 
+    if (context.actionControl.canAttackBuff)
+    {
+        scores.push_back({ BattleAction::AttackBuff, EvaluateAttackBuff(context) });
+    }
+
+    if(context.actionControl.canDefenseBuff)
+    {
+        scores.push_back({ BattleAction::DefenseBuff, EvaluateDefenseBuff(context) });
+    }
 
     ActionScore currentMax = scores[0];
 
@@ -148,6 +157,64 @@ int EnemyAI::EvaluateStunAttack(const BattleContext& context) const
     return score;
 }
 
+int EnemyAI::EvaluateAttackBuff(const BattleContext& context) const
+{
+    if (!context.actionControl.canAttackBuff) return 0;
+    if (context.self.status.attackUp) return 0;
+
+    int score = 20;
+
+    const float selfHpRatio = GetHpRatio(context.self);
+    const float targetHpRatio = GetHpRatio(context.target);
+
+    // 체력이 충분하면 준비 행동을 할 여유가 있음
+    if (selfHpRatio >= 0.75f) score += 30;
+    else if (selfHpRatio >= 0.50f) score += 15;
+
+    // 자신이 위험하면 버프보다 생존 행동 우선
+    if (selfHpRatio <= 0.35f) score -= 40;
+
+    // 상대 체력이 너무 낮으면 준비보다 즉시 마무리
+    if (targetHpRatio <= 0.25f) score -= 35;
+
+    // 상대 체력이 충분히 많으면 강화된 2턴을 활용할 가치가 큼
+    if (targetHpRatio >= 0.60f) score += 15;
+
+    // 강화 후 사용할 공격들이 쿨다운에서 곧 사용 가능하면 가치 상승
+    if (context.actionControl.canPowerAttack) score += 15;
+
+    return std::max(0, score);
+}
+
+int EnemyAI::EvaluateDefenseBuff(const BattleContext& context) const
+{
+    if (!context.actionControl.canDefenseBuff) return 0;
+    if (context.self.status.defenseUp) return 0;
+
+    int score = 20;
+
+    const float selfHpRatio = GetHpRatio(context.self);
+    const float targetHpRatio = GetHpRatio(context.target);
+
+    // 당장 죽을 정도는 아니지만 방어 준비가 필요한 구간
+    if (selfHpRatio <= 0.70f) score += 20;
+    if (selfHpRatio <= 0.50f) score += 25;
+
+    // 너무 위험하면 지속 버프보다 즉시 생존 행동
+    if (selfHpRatio <= 0.25f) score -= 45;
+
+    // 상대가 건강할수록 앞으로 받을 공격 횟수가 많음
+    if (targetHpRatio >= 0.60f) score += 15;
+
+    // 상대가 곧 죽으면 방어 투자보다 마무리가 낫다
+    if (targetHpRatio <= 0.25f) score -= 30;
+
+    // 이미 독에 걸렸다면 방어력으로 막지 못하는 피해가 있으므로 가치 감소
+    if (context.self.status.poisoned) score -= 10;
+
+    return std::max(0, score);
+}
+
 bool EnemyAI::HasActionControlStatus(const StatusSnapshot& status) const
 {
     return status.stunned;
@@ -184,6 +251,12 @@ const char* EnemyAI::ToString(BattleAction action) const
     case BattleAction::Guard:
         return "Guard";
 
+    case BattleAction::AttackBuff:
+        return "AttackBuff";
+
+    case BattleAction::DefenseBuff:
+        return "DefenseBuff";
+            
     default:
         return "Unknown";
     }

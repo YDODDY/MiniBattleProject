@@ -5,6 +5,8 @@
 #include "EventBus.h"
 #include "AttackData.h"
 #include "BattleContextBuilder.h"
+#include "StatusActionData.h"
+
 // 객체를 실제로 만들려면 (참조X) 크기, 맴버, 생성자 모두 알아야 하기 때문에 전방 선언 만으로는 모른다. 그래서 include 해줘야 함
 
 
@@ -48,6 +50,9 @@ public:
 	int CalculateRawDamage(const Character& attacker, const AttackData& data) const;
 	int CalculateFinalDamage(int rawDamage, const Character& target) const;
 	int ApplyCriticalDamage(int damage, const Character& attacker) const;
+
+	StatusActionData MakeStatusActionData(BattleAction action) const;
+	void ApplyStatusAction(Character& actor, Character& opponent, const StatusActionData& data);
 
 private:
 

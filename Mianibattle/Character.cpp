@@ -125,12 +125,27 @@ int Character::GetRemainingCooldown(BattleAction action) const
 
 int Character::GetAttack() const
 {
-	return selfStats.attack;
+	float multiplier = 1.0f;
+
+	if (const StatusEffect* attackUp = status.Find(StatusType::AttackUp))
+		multiplier += attackUp->value;
+
+	return static_cast<int>(selfStats.attack * multiplier);
 }
 
 int Character::GetDefense() const
 {
-	return selfStats.defense;
+	float multiplier = 1.0f;
+
+	if (const StatusEffect* defenseUp = status.Find(StatusType::DefenseUp))
+		multiplier += defenseUp->value;
+
+	return static_cast<int>(selfStats.defense * multiplier);
+}
+
+int Character::GetBaseAttack() const
+{
+	return selfStats.attack;
 }
 
 float Character::GetAccuracy() const

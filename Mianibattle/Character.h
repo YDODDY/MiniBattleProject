@@ -68,6 +68,7 @@ public :
 
 	int GetAttack() const;
 	int GetDefense() const;
+	int GetBaseAttack() const;
 	float GetAccuracy() const;
 	float GetEvasion() const;
 	float GetCriticalChance() const;

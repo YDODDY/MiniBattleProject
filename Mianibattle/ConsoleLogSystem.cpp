@@ -139,17 +139,17 @@ void ConsoleLogSystem::OnAppliedStatus(const AppliedStatusEvent& event)
 	switch (event.result)
 	{
 	case StatusApplyResult::Success:
-		std::cout << event.character.GetName() << " fall into "
+		std::cout << event.character.GetName() << " got "
 			<< ToString(event.statusEffect.type) << "! \n";
 		break;
 
 	case StatusApplyResult::Refreshed:
-		std::cout << event.character.GetName() << " fall into "
+		std::cout << event.character.GetName() << " got  "
 			<< ToString(event.statusEffect.type) << " again! \n";
 		break;
 
 	case StatusApplyResult::Refected:
-		std::cout << event.character.GetName() << " didn't fall into "
+		std::cout << event.character.GetName() << " didn't get "
 			<< ToString(event.statusEffect.type) << ". \n";
 
 		break;

@@ -7,5 +7,7 @@ enum class BattleAction
 	PoisonAttack,
 	StunAttack,
 	Heal,
-	Guard
+	Guard,
+	AttackBuff,
+	DefenseBuff
 };

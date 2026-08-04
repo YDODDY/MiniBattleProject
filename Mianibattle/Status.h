@@ -15,7 +15,8 @@ enum class StatusGroup
 	None,
 	Independent,
 	ActionControl,
-	ElementalState
+	ElementalState,
+	StatModifier
 };
 
 enum class StatusType
@@ -23,15 +24,17 @@ enum class StatusType
 	None,
 	Poison,
 	Stun,
+	AttackUp,
+	DefenseUp
 };
 
 std::string ToString(StatusType type);
 
 struct StatusEffect
 {
-	StatusType type;
-	int remainingTurns;
-	int value;
+	StatusType type = StatusType::None;
+	int remainingTurns = 0;
+	float value = 0.0f;
 };
 
 class Status

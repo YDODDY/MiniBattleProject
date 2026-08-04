@@ -28,6 +28,8 @@ StatusSnapshot BattleContextBuilder::MakeStatusSnapshot(const Character& charact
 
     snapshot.poisoned = status.Find(StatusType::Poison) != nullptr;
     snapshot.stunned = status.Find(StatusType::Stun) != nullptr;
+    snapshot.attackUp = status.Find(StatusType::AttackUp) != nullptr;
+    snapshot.defenseUp = status.Find(StatusType::DefenseUp) != nullptr;
 
     return snapshot;
 }
@@ -40,7 +42,9 @@ ActionControl BattleContextBuilder::MakeActionControl(const Character& character
     control.canPoisonAttack = character.CanUseAction(BattleAction::PoisonAttack);
     control.canStunAttack = character.CanUseAction(BattleAction::StunAttack);   
     control.canHeal = character.CanUseAction(BattleAction::Heal);
-    control.canGuard = character.CanUseAction(BattleAction::Guard);    
-    
+    control.canGuard = character.CanUseAction(BattleAction::Guard);
+    control.canAttackBuff = character.CanUseAction(BattleAction::AttackBuff);
+    control.canDefenseBuff = character.CanUseAction(BattleAction::DefenseBuff);
+
     return control;
 }

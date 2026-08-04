@@ -2,8 +2,11 @@
 
 struct StatusSnapshot
 {
-	bool poisoned;
-	bool stunned;
+	bool poisoned = false;
+	bool stunned = false;
+
+	bool attackUp = false;
+	bool defenseUp = false;
 };
 
 struct CharacterSnapshot
@@ -23,6 +26,9 @@ struct ActionControl
 
 	bool canHeal = true;
 	bool canGuard = true;
+
+	bool canAttackBuff = true;
+	bool canDefenseBuff = true;
 };
 
 

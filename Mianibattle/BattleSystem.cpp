@@ -89,6 +89,13 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 		actor.StartCooldown(BattleAction::Guard, 2);
 		break;
 
+	case BattleAction::AttackBuff:
+	case BattleAction::DefenseBuff:
+	{
+		const StatusActionData data = MakeStatusActionData(action);
+		ApplyStatusAction(actor, target, data);
+		break;
+	}
 
 	default:
 		const AttackData data = MakeAttackData(actor, action);
@@ -201,7 +208,7 @@ void BattleSystem::ApplyAttackResult(Character& attacker, Character& target, int
 		effect.remainingTurns = attackData.statusTurns;
 
 		effect.value = std::max(1, static_cast<int>(
-			attacker.GetAttack() * attackData.statusValue));
+			attacker.GetBaseAttack() * attackData.statusValue));
 
 		StatusApplyResult result = target.ApplyStatus(effect);
 
@@ -223,8 +230,7 @@ BattleAction BattleSystem::RequestAction(Character& actor, Character& target)
 
 int BattleSystem::CalculateRawDamage(const Character& attacker, const AttackData& data) const
 {
-	return static_cast<int>(
-		attacker.GetAttack() * data.damageMultiplier);
+	return static_cast<int>(attacker.GetAttack() * data.damageMultiplier);
 }
 
 int BattleSystem::CalculateFinalDamage(int rawDamage, const Character& target) const
@@ -236,6 +242,55 @@ int BattleSystem::ApplyCriticalDamage(int damage, const Character& attacker) con
 {
 	return static_cast<int>(
 		damage * attacker.GetCriticalDamageMultiplier());
+}
+
+StatusActionData BattleSystem::MakeStatusActionData(BattleAction action) const
+{
+	StatusActionData data;
+	data.action = action;
+
+	switch (action)
+	{
+	case BattleAction::AttackBuff:
+		data.target = ActionTarget::Self;
+		data.statusType = StatusType::AttackUp;
+		data.statusTurns = 3;
+		data.statusValue = 0.40f;
+		data.cooldownTurns = 5;
+		break;
+
+	case BattleAction::DefenseBuff:
+		data.target = ActionTarget::Self;
+		data.statusType = StatusType::DefenseUp;
+		data.statusTurns = 3;
+		data.statusValue = 0.40f;
+		data.cooldownTurns = 5;
+		break;
+
+	default:
+		break;
+	}
+
+	return data;
+}
+
+void BattleSystem::ApplyStatusAction(Character& actor, Character& opponent, const StatusActionData& data)
+{
+	if (!actor.CanUseAction(data.action))
+		return;
+
+	Character& receiver = data.target == ActionTarget::Self ? actor : opponent;
+	actor.StartCooldown(data.action, data.cooldownTurns);
+
+	StatusEffect effect;
+	effect.type = data.statusType;
+	effect.remainingTurns = data.statusTurns;
+	effect.value = data.statusValue;
+
+	const StatusApplyResult result = receiver.ApplyStatus(effect);
+
+	eventBus.Publish(AppliedStatusEvent{receiver, effect, result});
+
 }
 
 
