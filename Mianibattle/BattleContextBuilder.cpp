@@ -45,6 +45,8 @@ ActionControl BattleContextBuilder::MakeActionControl(const Character& character
     control.canGuard = character.CanUseAction(BattleAction::Guard);
     control.canAttackBuff = character.CanUseAction(BattleAction::AttackBuff);
     control.canDefenseBuff = character.CanUseAction(BattleAction::DefenseBuff);
+    control.canCounter = character.CanUseAction(BattleAction::Counter);
+    control.canParry = character.CanUseAction(BattleAction::Parry);
 
     return control;
 }

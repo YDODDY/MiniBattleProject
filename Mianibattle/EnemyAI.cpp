@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 
 BattleAction EnemyAI::ChooseAction(const BattleContext& context)
 {
@@ -44,6 +45,17 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
         scores.push_back({ BattleAction::DefenseBuff, EvaluateDefenseBuff(context) });
     }
 
+    if (context.actionControl.canCounter)
+    {
+        scores.push_back({ BattleAction::Counter, EvaluateCounter(context) });
+    }
+
+    if (context.actionControl.canParry)
+    {
+        scores.push_back({ BattleAction::Parry, EvaluateParry(context) });
+    }
+    
+    /*
     ActionScore currentMax = scores[0];
 
     for (auto& score : scores)
@@ -51,11 +63,21 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
         if (score.score > currentMax.score)
             currentMax = score;
     }
+    */
 
-    PrintDecisionLog(scores, currentMax.action);
-    UpdateMemory(currentMax.action);
+    // Utility 평가식 결과값 내림차순 정렬 및 출력으로 수정
+    std::sort(scores.begin(), scores.end(), []
+    (const ActionScore& left, const ActionScore& right)
+        {
+            return left.score > right.score;
+        });
 
-    return currentMax.action;
+    const BattleAction selectexAction = scores.front().action;
+
+    PrintDecisionLog(scores, selectexAction);
+    UpdateMemory(selectexAction);
+
+    return selectexAction;
 }
 
 void EnemyAI::UpdateMemory(BattleAction selectedAction)
@@ -215,6 +237,87 @@ int EnemyAI::EvaluateDefenseBuff(const BattleContext& context) const
     return std::max(0, score);
 }
 
+int EnemyAI::EvaluateCounter(const BattleContext& context) const
+{
+    const int threat = EstimateDirectAttackThreat(context);
+    int score = 15;
+    const float selfHpRatio = GetHpRatio(context.self);
+    const float targetHpRatio = GetHpRatio(context.target);
+
+    // Counter 피해를 감당하기 어려움
+    if (selfHpRatio <= 0.20f) score -= 50;
+    else if (selfHpRatio <= 0.40f) score -= 20;
+
+    // 적당한 체력 여유가 있어 일부 피해를 감수할 수 있음
+    if (selfHpRatio >= 0.60f) score += 15;
+
+    // 상대가 공격력 강화 상태라 공격할 가능성이 높음
+    if (context.target.status.attackUp) score += 35;
+
+    // Enemy 체력이 낮으면 Player가 마무리를 시도할 가능성이 있음
+    if (selfHpRatio <= 0.35f) score += 20;
+
+    // Player 체력이 낮으면 Player도 공격적으로 마무리하려 할 수 있음
+    if (targetHpRatio <= 0.30f) score += 15;
+
+    // 상대가 방어 강화 중이면 공격 대신 다른 행동을 할 가능성도 있음
+    if (context.target.status.defenseUp) score -= 10;
+
+    if (threat >= 40) score += 30;
+    if (threat >= 75) score -= 10;
+
+    score += GetRiskVariation(3);
+    return std::max(0, score);
+}
+
+int EnemyAI::EvaluateParry(const BattleContext& context) const
+{
+    const int threat = EstimateDirectAttackThreat(context);
+    int score = 5;
+    const float selfHpRatio = GetHpRatio(context.self);
+    const float targetHpRatio = GetHpRatio(context.target);
+
+    // 상대가 AttackUp 상태면 직접 공격 가능성이 크게 상승
+    if (context.target.status.attackUp) score += 45;
+
+    // 낮은 체력에서는 피해 무효의 가치가 매우 큼
+    if (selfHpRatio <= 0.30f) score += 30;
+
+    // 하지만 너무 낮은 체력에서 실패하면 치명적
+    if (selfHpRatio <= 0.15f) score -= 15;
+
+    // 상대가 마무리를 노릴 만한 상황
+    if (selfHpRatio <= 0.35f) score += 20;
+
+    // 상대 체력이 낮으면 공격으로 승부를 보려 할 가능성
+    if (targetHpRatio <= 0.25f) score += 10;
+
+    // 상대가 비공격 준비 행동을 할 여지가 있다고 추정
+    if (context.target.status.defenseUp) score -= 15;
+
+    if (threat >= 70) score += 70;
+
+    score += GetRiskVariation(3);
+
+    return std::max(0, score);
+}
+
+int EnemyAI::GetRiskVariation(int range) const
+{
+    return rand() % (range * 2 + 1) - range;
+}
+
+int EnemyAI::EstimateDirectAttackThreat(const BattleContext& context) const
+{
+    int threat = 20;
+
+    if (context.target.status.attackUp) threat += 40;
+    if (GetHpRatio(context.self) <= 0.35f) threat += 20;
+    if (GetHpRatio(context.target) <= 0.25f) threat += 10;
+
+    return threat;
+}
+
 bool EnemyAI::HasActionControlStatus(const StatusSnapshot& status) const
 {
     return status.stunned;
@@ -256,7 +359,14 @@ const char* EnemyAI::ToString(BattleAction action) const
 
     case BattleAction::DefenseBuff:
         return "DefenseBuff";
-            
+           
+    case BattleAction::Counter:
+        return "Counter";
+
+    case BattleAction::Parry:
+        return "Parry";
+
+
     default:
         return "Unknown";
     }
@@ -283,3 +393,35 @@ void EnemyAI::PrintDecisionLog(const std::vector<ActionScore>& scores, BattleAct
         << "\n\n";
 
 }
+
+void EnemyAI::PrintActionScores(const std::vector<ActionScore>& scores, BattleAction selectedAction) const
+{
+    std::cout << "\n===== Enemy AI =====\n\n";
+
+    for (const ActionScore& actionScore : scores)
+    {
+        std::cout
+            << std::left
+            << std::setw(15)
+            << ToString(actionScore.action)
+            << ": "
+            << actionScore.score
+            << '\n';
+    }
+
+    std::cout << "\n-------------------------\n";
+
+    if (!scores.empty())
+    {
+        std::cout
+            << "Highest Score : "
+            << scores.front().score
+            << '\n';
+    }
+
+    std::cout
+        << "Choose        : "
+        << ToString(selectedAction)
+        << "\n\n";
+}
+

@@ -60,3 +60,11 @@ struct DamageOverTimeEvent
 	int damage;
 	StatusType statusType;
 };
+
+struct ReactionEvent
+{
+	Character& attacker;
+	Character& reactor;
+
+	ReactionType reaction;
+};

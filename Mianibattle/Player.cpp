@@ -17,6 +17,8 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 		std::cout << "6. StunAttack\n";
 		std::cout << "7. AttackBuff\n";
 		std::cout << "8. DefenseBuff\n";
+		std::cout << "9. Counter\n";
+		std::cout << "0. Parry\n";
 		std::cout << ">> ";
 
 		if (!(std::cin >> choice))
@@ -97,7 +99,21 @@ BattleAction Player::ChooseAction(const BattleContext& context)
 				break;
 			}
 			return BattleAction::DefenseBuff;
-				
+		case 9:
+			if (!CanUseAction(BattleAction::Counter))
+			{
+				std::cout << "Counter is on cooldown.\n";
+				break;
+			}
+			return BattleAction::Counter;		
+		case 0:
+				if (!CanUseAction(BattleAction::Parry))
+				{
+					std::cout << "Parry is on cooldown.\n";
+					break;
+				}
+				return BattleAction::Parry;
+
 		default:
 			std::cout << "Only Mentioned Command is available. \n";
 			break;

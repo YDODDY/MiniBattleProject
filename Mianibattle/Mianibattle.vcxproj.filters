@@ -101,6 +101,9 @@
     <ClInclude Include="StatusActionData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ReactionType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ConsoleLogSystem.h">

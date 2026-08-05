@@ -58,6 +58,12 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 			OnDamageOverTime(event);
 		}
 	);
+
+	eventBus.Subscribe<ReactionEvent>(
+		[this](const ReactionEvent& event)
+		{
+			OnReactedAttack(event);
+		});
 }
 
 void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
@@ -188,4 +194,30 @@ void ConsoleLogSystem::OnDamageOverTime(const DamageOverTimeEvent& event)
 		<< " HP: "
 		<< event.target.GetHp()
 		<< '\n';
+}
+
+void ConsoleLogSystem::OnReactedAttack(const ReactionEvent& event)
+{
+	switch (event.reaction)
+	{
+	case ReactionType::Counter:
+		std::cout
+			<< event.reactor.GetName()
+			<< " countered "
+			<< event.attacker.GetName()
+			<< "'s attack!\n";
+		break;
+
+	case ReactionType::Parry:
+		std::cout
+			<< event.reactor.GetName()
+			<< " parried "
+			<< event.attacker.GetName()
+			<< "'s attack!\n";
+		break;
+
+	case ReactionType::None:
+	default:
+		break;
+	}
 }

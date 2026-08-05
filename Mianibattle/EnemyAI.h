@@ -3,6 +3,7 @@
 #include "BattleAction.h"
 #include "BattleContext.h"
 #include <vector>
+#include <unordered_map>
 
 struct AIMemory
 {
@@ -35,11 +36,17 @@ private:
 	int EvaluateStunAttack(const BattleContext& context) const;
 	int EvaluateAttackBuff(const BattleContext& context) const;
 	int EvaluateDefenseBuff(const BattleContext& context) const;
+	int EvaluateCounter(const BattleContext& context) const;
+	int EvaluateParry(const BattleContext& context) const;
+
+	int GetRiskVariation(int range) const;
+	int EstimateDirectAttackThreat(const BattleContext& context) const;
 
 	bool HasActionControlStatus(const StatusSnapshot& status) const;
 	float GetHpRatio(const CharacterSnapshot& character) const;
 
 	const char* ToString(BattleAction action) const;
 	void PrintDecisionLog(const std::vector<ActionScore>& scores, BattleAction selectedAction) const;
-
+	void PrintActionScores(const std::vector<ActionScore>& scores, BattleAction selectedAction) const;
+		
 };

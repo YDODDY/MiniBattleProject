@@ -38,7 +38,14 @@ void BattleSystem::Attack(Character& attacker, Character& target, const AttackDa
 
 	attacker.StartCooldown(attackData.action, attackData.cooldownTurns);
 
-	if (!CheckItWasHit(attacker, target, attackData))
+	const bool isHit = CheckItWasHit(attacker, target, attackData);
+
+	if (ApplyReaction(attacker, target, attackData, isHit))
+	{
+		return;
+	}
+
+	if (!isHit)
 	{
 		eventBus.Publish(MissedEvent{attacker, target, attackData.action});
 		return;
@@ -97,11 +104,28 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 		break;
 	}
 
+	case BattleAction::Counter:
+		if (!actor.CanUseAction(BattleAction::Counter)) return;
+
+		actor.PrepareReaction(ReactionType::Counter);
+		actor.StartCooldown(BattleAction::Counter, 3);
+		break;
+
+
+	case BattleAction::Parry:
+		if (!actor.CanUseAction(BattleAction::Parry)) return;
+
+		actor.PrepareReaction(ReactionType::Parry);
+		actor.StartCooldown(BattleAction::Parry, 5);
+		break;
+
 	default:
 		const AttackData data = MakeAttackData(actor, action);
 		Attack(actor, target, data);
 		break;
 	}
+
+	ResolveUnusedReaction(target, action);
 	
 }
 
@@ -203,16 +227,7 @@ void BattleSystem::ApplyAttackResult(Character& attacker, Character& target, int
 
 	if (attackData.appliedStatus != StatusType::None)
 	{
-		StatusEffect effect;
-		effect.type = attackData.appliedStatus;
-		effect.remainingTurns = attackData.statusTurns;
-
-		effect.value = std::max(1, static_cast<int>(
-			attacker.GetBaseAttack() * attackData.statusValue));
-
-		StatusApplyResult result = target.ApplyStatus(effect);
-
-		eventBus.Publish(AppliedStatusEvent{target, effect, result});
+		ApplyAttackStatus(attacker, target, attackData);
 	}
 
 	if (target.IsDead())
@@ -291,6 +306,151 @@ void BattleSystem::ApplyStatusAction(Character& actor, Character& opponent, cons
 
 	eventBus.Publish(AppliedStatusEvent{receiver, effect, result});
 
+}
+
+bool BattleSystem::IsDirectAttack(BattleAction action) const
+{
+	switch (action)
+	{
+	case BattleAction::Attack:
+	case BattleAction::PowerAttack:
+	case BattleAction::PoisonAttack:
+	case BattleAction::StunAttack:
+		return true;
+
+	default:
+		return false;
+	}
+}
+
+bool BattleSystem::ApplyReaction(Character& attacker, Character& target, const AttackData& attackData, bool isHit)
+{
+	const ReactionType reaction = target.GetPreparedReaction();
+
+	if (reaction == ReactionType::None)
+	{
+		return false;
+	}
+
+	target.ClearPreparedReaction();
+
+	eventBus.Publish(ReactionEvent{ attacker, target, reaction });
+
+	switch (reaction)
+	{
+	case ReactionType::Counter:
+		HandleCounter(attacker,target,attackData,isHit);
+		return true;
+
+	case ReactionType::Parry:
+		HandleParry(attacker,target,attackData,isHit);
+		return true;
+
+	case ReactionType::None:
+	default:
+		return false;
+	}
+}
+
+void BattleSystem::ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier)
+{
+	int damage = static_cast<int>(counterAttacker.GetAttack() * damageMultiplier);
+	damage = CalculateFinalDamage(damage, target);
+	const int appliedDamage = target.ReceiveDamage(damage);
+
+	eventBus.Publish(DamagedEvent{counterAttacker, target, 
+		appliedDamage, DamageType::Counter, false, BattleAction::Counter});
+	
+	if (target.IsDead())
+	{
+		eventBus.Publish(DeadEvent{target});
+	}
+
+}
+
+void BattleSystem::HandleCounter(Character& attacker, Character& defender, const AttackData& attackData, bool isHit)
+{
+	if (isHit)
+	{
+		int damage = CalculateRawDamage(attacker, attackData);
+
+		const bool isCritical = CheckIsCritical(attacker);
+		if (isCritical)
+		{
+			damage = ApplyCriticalDamage(damage, attacker);
+		}
+
+		damage = CalculateFinalDamage(damage, defender);
+		damage = static_cast<int>(damage * 0.5f);
+		const int appliedDamage = defender.ReceiveDamage(damage);
+
+		eventBus.Publish(DamagedEvent{attacker, defender, 
+			appliedDamage, DamageType::Direct, isCritical, attackData.action});
+
+		if (defender.IsDead())
+		{
+			eventBus.Publish(DeadEvent { defender});
+			return;
+		}
+
+	}
+	else
+	{
+		eventBus.Publish(MissedEvent{ attacker,defender,attackData.action });
+	}
+
+	ApplyAttackStatus(attacker, defender, attackData);
+
+	if (!defender.IsDead())
+	{
+		ExecuteCounterAttack( defender,attacker, 0.8f);
+	}
+}
+
+void BattleSystem::HandleParry(Character& attacker, Character& defender, const AttackData& attackData, bool isHit)
+{
+	if (!isHit)
+	{
+		eventBus.Publish( MissedEvent{ attacker, defender, attackData.action });
+		ExecuteCounterAttack( defender, attacker, 1.2f);
+		return;
+	}
+
+	StatusEffect effect;
+	effect.type = StatusType::AttackUp;
+	effect.remainingTurns = 2;
+	effect.value = 0.4f;
+
+	const StatusApplyResult result = defender.ApplyStatus(effect);
+
+	eventBus.Publish(AppliedStatusEvent{ defender, effect, result });
+	ExecuteCounterAttack( defender, attacker, 1.2f);
+}
+
+void BattleSystem::ResolveUnusedReaction(Character& waitingCharacter, BattleAction performedAction)
+{
+	if (!waitingCharacter.HasPreparedReaction()) return;
+	if (IsDirectAttack(performedAction)) return;
+
+	waitingCharacter.ClearPreparedReaction();
+
+}
+
+void BattleSystem::ApplyAttackStatus(Character& attacker, Character& target, const AttackData& attackData)
+{
+	if (attackData.appliedStatus == StatusType::None)
+		return;
+
+	StatusEffect effect;
+	effect.type = attackData.appliedStatus;
+	effect.remainingTurns = attackData.statusTurns;
+
+	effect.value = std::max( 1.0f,attacker.GetBaseAttack()
+		* attackData.statusValue);
+
+	const StatusApplyResult result = target.ApplyStatus(effect);
+
+	eventBus.Publish( AppliedStatusEvent{ target,effect,result });
 }
 
 

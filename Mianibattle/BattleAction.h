@@ -9,5 +9,7 @@ enum class BattleAction
 	Heal,
 	Guard,
 	AttackBuff,
-	DefenseBuff
+	DefenseBuff,
+	Counter,
+	Parry
 };

@@ -54,6 +54,17 @@ public:
 	StatusActionData MakeStatusActionData(BattleAction action) const;
 	void ApplyStatusAction(Character& actor, Character& opponent, const StatusActionData& data);
 
+	bool IsDirectAttack(BattleAction action) const;
+
+	bool ApplyReaction(Character& attacker, Character& target, const AttackData& attackData, bool isHit);
+	void ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier);
+	void HandleCounter(Character& attacker, Character& defender, const AttackData& attackData, bool isHit);
+	void HandleParry(Character& attacker, Character& defender, const AttackData& attackData, bool isHit);
+
+	void ResolveUnusedReaction(Character& waitingCharacter, BattleAction performedAction);
+
+	void ApplyAttackStatus(Character& attacker, Character& target, const AttackData& attackData);
+
 private:
 
 	EventBus& eventBus;

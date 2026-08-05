@@ -29,6 +29,9 @@ struct ActionControl
 
 	bool canAttackBuff = true;
 	bool canDefenseBuff = true;
+
+	bool canCounter = true;
+	bool canParry = true;
 };
 
 

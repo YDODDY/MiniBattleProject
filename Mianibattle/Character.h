@@ -5,6 +5,7 @@
 #include "Status.h"
 #include "TurnStartResult.h"
 #include "BattleContext.h"
+#include "ReactionType.h"
 
 struct ActionCooldown
 {
@@ -89,6 +90,11 @@ public :
 
 	const Status& GetStatus() const;
 
+	void PrepareReaction(ReactionType type);
+	ReactionType GetPreparedReaction() const;
+	void ClearPreparedReaction();
+	bool HasPreparedReaction() const;
+
 private: 
 
 	int selfHp;
@@ -101,4 +107,6 @@ private:
 	std::vector<ActionCooldown> cooldowns;
 
 	CharacterStats selfStats;
+
+	ReactionType preparedReaction = ReactionType::None;
 };
