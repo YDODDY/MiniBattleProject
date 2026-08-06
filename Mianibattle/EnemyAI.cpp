@@ -6,24 +6,32 @@
 
 BattleAction EnemyAI::ChooseAction(const BattleContext& context)
 {
-    /*
     std::vector<ActionScore> scores;
     
-    scores.push_back({ BattleAction::Attack, EvaluateAttack(context) });
-   
-    if (context.actionControl.canPowerAttack)
+    if (!context.self.status.directAttackLocked)
     {
-        scores.push_back({ BattleAction::PowerAttack, EvaluatePowerAttack(context) });
-    }
+        scores.push_back({ BattleAction::Attack, EvaluateAttack(context) });
 
-    if (context.actionControl.canPoisonAttack)
-    {
-        scores.push_back({ BattleAction::PoisonAttack, EvaluatePoisonAttack(context) });
-    }
+        if (context.actionControl.canPowerAttack)
+        {
+            scores.push_back({ BattleAction::PowerAttack, EvaluatePowerAttack(context) });
+        }
 
-    if (context.actionControl.canStunAttack)
-    {
-        scores.push_back({ BattleAction::StunAttack, EvaluateStunAttack(context) });
+        if (context.actionControl.canPoisonAttack)
+        {
+            scores.push_back({ BattleAction::PoisonAttack, EvaluatePoisonAttack(context) });
+        }
+
+        if (context.actionControl.canStunAttack)
+        {
+            scores.push_back({ BattleAction::StunAttack, EvaluateStunAttack(context) });
+        }
+
+        // parry failure penlaty : directAttacks 불가, parry 는 어차피 이번 턴에 못쓰기 때문에 제외
+        if (context.actionControl.canParry)
+        {
+            scores.push_back({ BattleAction::Parry, EvaluateParry(context) });
+        }
     }
 
     if (context.actionControl.canHeal)
@@ -51,9 +59,10 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
         scores.push_back({ BattleAction::Counter, EvaluateCounter(context) });
     }
 
-    if (context.actionControl.canParry)
+    if (scores.empty())
     {
-        scores.push_back({ BattleAction::Parry, EvaluateParry(context) });
+        // 실제로는 발생하지 않도록 안전 행동 하나 남겨두기
+        return BattleAction::Guard;
     }
 
     // Utility 평가식 결과값 내림차순 정렬 및 출력으로 수정
@@ -63,16 +72,13 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
             return left.score > right.score;
         });
 
-    const BattleAction selectexAction = scores.front().action;
+    const BattleAction selectedAction = scores.front().action;
 
-    PrintDecisionLog(scores, selectexAction);
-    UpdateMemory(selectexAction);
+    PrintDecisionLog(scores, selectedAction);
+    UpdateMemory(selectedAction);
 
     
-    return selectexAction;
-    */
-
-    return BattleAction::PowerAttack;
+    return selectedAction;
 }
 
 void EnemyAI::UpdateMemory(BattleAction selectedAction)

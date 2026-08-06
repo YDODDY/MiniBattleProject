@@ -62,3 +62,17 @@ struct ReactionEvent
 
 	ReactionType reaction;
 };
+
+struct ReactionFailedEvent
+{
+	Character& character;
+
+	ReactionType reaction;
+	StatusType statusType;
+};
+
+struct StatusExpiredEvent
+{
+	Character& character;
+	StatusType statusType;
+};

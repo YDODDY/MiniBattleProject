@@ -22,10 +22,15 @@ enum class StatusGroup
 enum class StatusType
 {
 	None,
+
 	Poison,
 	Stun,
+
 	AttackUp,
-	DefenseUp
+	DefenseUp,
+
+	DefenseDown,
+	DirectAttackLocked
 };
 
 std::string ToString(StatusType type);
@@ -46,7 +51,7 @@ public:
 	void Add(StatusEffect effect);
 	bool Has(StatusType type) const;
 	void Remove(StatusType type);
-	void TickTurn();
+	std::vector<StatusType> TickTurn();
 
 	const StatusEffect* Find(StatusType type) const;
 

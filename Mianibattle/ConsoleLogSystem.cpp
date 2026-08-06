@@ -1,4 +1,5 @@
 #include "ConsoleLogSystem.h"
+#include "ReactionType.h"
 #include <iostream>
 
 ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
@@ -57,6 +58,20 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 		{
 			OnReactedAttack(event);
 		});
+
+	eventBus.Subscribe<ReactionFailedEvent>(
+		[this](const ReactionFailedEvent& event)
+		{
+			OnReactionFailed(event);
+		}
+	);
+
+	eventBus.Subscribe<StatusExpiredEvent>(
+		[this](const StatusExpiredEvent& event)
+		{
+			OnStatusExpired(event);
+		}
+	);
 }
 
 void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
@@ -212,6 +227,56 @@ void ConsoleLogSystem::OnReactedAttack(const ReactionEvent& event)
 
 	case ReactionType::None:
 	default:
+		break;
+	}
+}
+
+void ConsoleLogSystem::OnReactionFailed(const ReactionFailedEvent& event)
+{
+	std::cout
+		<< event.character.GetName()
+		<< "'s "
+		<< ToString(event.reaction)
+		<< " failed!\n";
+
+	if (event.statusType != StatusType::None)
+	{
+		std::cout
+			<< event.character.GetName()
+			<< " received "
+			<< ToString(event.statusType)
+			<< ".\n";
+	}
+}
+
+void ConsoleLogSystem::OnStatusExpired(const StatusExpiredEvent& event)
+{
+	switch (event.statusType)
+	{
+	case StatusType::DefenseDown:
+		std::cout
+			<< event.character.GetName()
+			<< "'s Defense returned to normal.\n";
+		break;
+
+	case StatusType::DirectAttackLocked:
+		std::cout
+			<< event.character.GetName()
+			<< " can use direct attacks again.\n";
+		break;
+
+	case StatusType::AttackUp:
+		std::cout
+			<< event.character.GetName()
+			<< "'s AttackUp expired.\n";
+		break;
+
+	default:
+		std::cout
+			<< ToString(event.statusType)
+			<< " expired on "
+			<< event.character.GetName()
+			<< ".\n";
 		break;
 	}
 }

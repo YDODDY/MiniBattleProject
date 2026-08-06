@@ -139,6 +139,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BattleActionUtils.cpp" />
     <ClCompile Include="BattleContextBuilder.cpp" />
     <ClCompile Include="BattleSystem.cpp" />
     <ClCompile Include="Character.cpp" />
@@ -148,12 +149,14 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Mianibattle.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="ReactionType.cpp" />
     <ClCompile Include="Status.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActionTarget.h" />
     <ClInclude Include="AttackData.h" />
     <ClInclude Include="BattleAction.h" />
+    <ClInclude Include="BattleActionUtils.h" />
     <ClInclude Include="BattleContext.h" />
     <ClInclude Include="BattleContextBuilder.h" />
     <ClInclude Include="BattleResult.h" />

@@ -25,8 +25,13 @@ TurnStartResult BattleSystem::StartTurn(Character& character)
 	{
 		eventBus.Publish(ActionPreventedEvent{character, result.preventedBy});
 	}
-	
-		return result;
+
+	for (const StatusType expiredStatus : result.expiredStatuses)
+	{
+		eventBus.Publish(StatusExpiredEvent{character,expiredStatus});
+	}
+
+	return result;
 }
 
 void BattleSystem::Attack(Character& attacker, Character& target, const AttackData& attackData)
@@ -311,6 +316,18 @@ void BattleSystem::ApplyStatusAction(Character& actor, Character& opponent, cons
 
 }
 
+void BattleSystem::ApplyStatusEffect(Character& target, StatusType type, int turns, float value)
+{
+	StatusEffect effect;
+	effect.type = type;
+	effect.remainingTurns = turns;
+	effect.value = value;
+
+	const StatusApplyResult result = target.ApplyStatus(effect);
+
+	eventBus.Publish( AppliedStatusEvent{target,effect,	result});
+}
+
 bool BattleSystem::IsDirectAttack(BattleAction action) const
 {
 	switch (action)
@@ -436,8 +453,31 @@ void BattleSystem::ResolveUnusedReaction(Character& waitingCharacter, BattleActi
 {
 	if (!waitingCharacter.HasPreparedReaction()) return;
 	if (IsDirectAttack(performedAction)) return;
-
+	
+	const ReactionType failedReaction = waitingCharacter.GetPreparedReaction();
 	waitingCharacter.ClearPreparedReaction();
+	StatusType appliedPenalty = StatusType::None;
+
+	switch (failedReaction)
+	{		
+	case ReactionType::Counter:
+		appliedPenalty = StatusType::DefenseDown;
+		ApplyStatusEffect(waitingCharacter,appliedPenalty,3,0.5f);
+		break;
+
+	case ReactionType::Parry:
+		appliedPenalty = StatusType::DirectAttackLocked;
+		ApplyStatusEffect(waitingCharacter,appliedPenalty,2,0.0f);
+		break;
+
+	case ReactionType::Guard:
+	case ReactionType::None:
+	default:
+		break;
+	}
+
+	eventBus.Publish(ReactionFailedEvent
+		{waitingCharacter,failedReaction,appliedPenalty	});
 
 }
 

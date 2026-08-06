@@ -1,11 +1,12 @@
 #include "Character.h"
 #include <iostream>
 #include <algorithm>
+#include "BattleActionUtils.h"
 
 TurnStartResult Character::BeginTurn()
 {
 	TurnStartResult result = ProcessTurnStartStatuses();
-	status.TickTurn();
+	result.expiredStatuses = status.TickTurn();
 	TickCooldowns();
 
 	return result;
@@ -52,9 +53,26 @@ int Character::Heal(int healAmount)
 	return selfHp - previousHp;
 }
 
+
 bool Character::CanUseAction(BattleAction action) const
 {
-	return GetRemainingCooldown(action) <= 0;
+	const bool isDirectAttackLocked =
+		status.Find(StatusType::DirectAttackLocked)	!= nullptr;
+
+	if (isDirectAttackLocked && IsDirectAttackAction(action))
+	{
+		return false;
+	}
+
+	for (const ActionCooldown& cooldown : cooldowns)
+	{
+		if (cooldown.action == action)
+		{
+			return cooldown.remainingTurns <= 0;
+		}
+	}
+
+	return true;
 }
 
 void Character::StartCooldown(BattleAction action, int turns)
@@ -123,6 +141,9 @@ int Character::GetDefense() const
 
 	if (const StatusEffect* defenseUp = status.Find(StatusType::DefenseUp))
 		multiplier += defenseUp->value;
+
+	if (const StatusEffect* defenseDown = status.Find(StatusType::DefenseDown))
+		multiplier -= defenseDown->value;
 
 	return static_cast<int>(selfStats.defense * multiplier);
 }

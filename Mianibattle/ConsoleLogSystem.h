@@ -18,5 +18,6 @@ private:
 	void OnPreventedAction(const ActionPreventedEvent& event);
 	void OnDamageOverTime(const DamageOverTimeEvent& event);
 	void OnReactedAttack(const ReactionEvent& event);
-
+	void OnReactionFailed(const ReactionFailedEvent& event);
+	void OnStatusExpired(const StatusExpiredEvent& event);
 };

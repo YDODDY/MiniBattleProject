@@ -12,5 +12,5 @@ public:
 	}
 
 	BattleAction ChooseAction(const BattleContext& context) override;
-
+	BattleAction ConvertChoiceToBattleAction(int choice);
 };

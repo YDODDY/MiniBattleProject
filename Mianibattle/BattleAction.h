@@ -2,6 +2,7 @@
 
 enum class BattleAction
 {
+	None,
 	Attack,
 	PowerAttack,
 	PoisonAttack,

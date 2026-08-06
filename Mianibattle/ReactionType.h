@@ -7,3 +7,5 @@ enum class ReactionType
 	Counter,
 	Parry
 };
+
+const char* ToString(ReactionType reaction);

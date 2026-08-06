@@ -45,6 +45,12 @@
     <ClCompile Include="EnemyAI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ReactionType.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleActionUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Character.h">
@@ -102,6 +108,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ReactionType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleActionUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

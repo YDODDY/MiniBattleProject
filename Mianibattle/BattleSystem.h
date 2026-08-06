@@ -49,6 +49,7 @@ public:
 
 	StatusActionData MakeStatusActionData(BattleAction action) const;
 	void ApplyStatusAction(Character& actor, Character& opponent, const StatusActionData& data);
+	void ApplyStatusEffect(Character& target, StatusType type, int turns, float value);
 
 	bool IsDirectAttack(BattleAction action) const;
 

@@ -7,6 +7,8 @@ struct StatusSnapshot
 
 	bool attackUp = false;
 	bool defenseUp = false;
+
+	bool directAttackLocked = false;
 };
 
 struct CharacterSnapshot

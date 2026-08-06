@@ -41,11 +41,17 @@ void Status::Remove(StatusType type)
 	}
 }
 
-void Status::TickTurn()
+std::vector<StatusType> Status::TickTurn()
 {
+	std::vector<StatusType> expiredStatuses;
+
 	for (StatusEffect& effect : effects)
 	{
 		effect.remainingTurns--;
+		if (effect.remainingTurns <= 0)
+		{
+			expiredStatuses.push_back(effect.type);
+		}
 	}
 
 	effects.erase(
@@ -58,6 +64,7 @@ void Status::TickTurn()
 			}),
 		effects.end());
 
+	return expiredStatuses;
 }
 
 const StatusEffect* Status::Find(StatusType type) const
@@ -90,8 +97,10 @@ StatusGroup Status::GetStatusGroup(StatusType type) const
 
 	case StatusType::AttackUp:
 	case StatusType::DefenseUp:
+	case StatusType::DefenseDown:
 		return StatusGroup::StatModifier;
 
+	case StatusType::DirectAttackLocked:
 	default:
 		return StatusGroup::Independent;
 	}
@@ -156,10 +165,16 @@ std::string ToString(StatusType type)
 		return "Stuned";
 	
 	case StatusType::AttackUp:
-		return "AttackUped";
+		return "Attack Uped";
 
 	case StatusType::DefenseUp:
-		return "DefenseUped";
+		return "Defense Uped";
+
+	case StatusType::DefenseDown:
+		return "Defense Downed";
+
+	case StatusType::DirectAttackLocked:
+		return "Attack Locked";
 
 	default:
 		return "None";

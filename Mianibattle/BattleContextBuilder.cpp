@@ -17,7 +17,7 @@ CharacterSnapshot BattleContextBuilder::MakeCharacterSnapshot(const Character& c
     snapshot.hp = character.GetHp();
     snapshot.maxHp = character.GetMaxHp();
     snapshot.status = MakeStatusSnapshot(character);
-
+    snapshot.status.directAttackLocked = character.HasStatus(StatusType::DirectAttackLocked);
     return snapshot;
 }
 

@@ -8,4 +8,5 @@ struct TurnStartResult
     DamageType damageType = DamageType::None;
     bool canAct = true;
     StatusType preventedBy = StatusType::None;
+    std::vector<StatusType> expiredStatuses;
 };
