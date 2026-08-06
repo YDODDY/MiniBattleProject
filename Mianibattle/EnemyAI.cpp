@@ -6,6 +6,7 @@
 
 BattleAction EnemyAI::ChooseAction(const BattleContext& context)
 {
+    /*
     std::vector<ActionScore> scores;
     
     scores.push_back({ BattleAction::Attack, EvaluateAttack(context) });
@@ -54,16 +55,6 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
     {
         scores.push_back({ BattleAction::Parry, EvaluateParry(context) });
     }
-    
-    /*
-    ActionScore currentMax = scores[0];
-
-    for (auto& score : scores)
-    {
-        if (score.score > currentMax.score)
-            currentMax = score;
-    }
-    */
 
     // Utility 평가식 결과값 내림차순 정렬 및 출력으로 수정
     std::sort(scores.begin(), scores.end(), []
@@ -77,7 +68,11 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
     PrintDecisionLog(scores, selectexAction);
     UpdateMemory(selectexAction);
 
+    
     return selectexAction;
+    */
+
+    return BattleAction::PowerAttack;
 }
 
 void EnemyAI::UpdateMemory(BattleAction selectedAction)

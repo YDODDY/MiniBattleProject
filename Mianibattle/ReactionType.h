@@ -3,6 +3,7 @@
 enum class ReactionType
 {
 	None,
+	Guard,
 	Counter,
 	Parry
 };

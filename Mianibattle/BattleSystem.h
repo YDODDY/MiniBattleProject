@@ -31,11 +31,7 @@ public:
 
 	void ExecuteAction(BattleAction action, Character& actor, Character& target);
 
-	void Guard(Character& character);
-
-	void UnGuard(Character& character);
-
-	void HandleGuardedAttack(Character& attacker, Character& actor);
+	void HandleGuardedAttack(Character& attacker, Character& actor, const AttackData& attackData, bool isHit);
 
 	bool CheckItWasHit(const Character& attacker, const Character& target, const AttackData& data) const;
 
@@ -57,7 +53,7 @@ public:
 	bool IsDirectAttack(BattleAction action) const;
 
 	bool ApplyReaction(Character& attacker, Character& target, const AttackData& attackData, bool isHit);
-	void ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier);
+	void ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier, BattleAction sourceAction);
 	void HandleCounter(Character& attacker, Character& defender, const AttackData& attackData, bool isHit);
 	void HandleParry(Character& attacker, Character& defender, const AttackData& attackData, bool isHit);
 

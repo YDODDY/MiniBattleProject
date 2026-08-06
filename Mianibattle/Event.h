@@ -27,12 +27,6 @@ struct DeadEvent
 	Character& deadCharacter;
 };
 
-struct GuardEvent
-{
-	Character& attacker;
-	Character& defender;
-};
-
 struct MissedEvent
 {
 	Character& attacker;

@@ -52,22 +52,6 @@ int Character::Heal(int healAmount)
 	return selfHp - previousHp;
 }
 
-void Character::StartGuarding()
-{
-	if (isGuarding)
-		return;
-
-	isGuarding = true;
-}
-
-void Character::StopGuarding()
-{
-	if (!isGuarding)
-		return;
-
-	isGuarding = false;
-}
-
 bool Character::CanUseAction(BattleAction action) const
 {
 	return GetRemainingCooldown(action) <= 0;
@@ -187,12 +171,6 @@ int Character::GetMaxHp() const
 {
 	return selfStats.maxHp;
 }
-
-bool Character::IsGuarding() const
-{
-	return isGuarding;
-}
-
 
 StatusApplyResult Character::ApplyStatus(const StatusEffect& effect)
 {

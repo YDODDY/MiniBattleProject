@@ -51,12 +51,6 @@ void BattleSystem::Attack(Character& attacker, Character& target, const AttackDa
 		return;
 	}
 
-	if (target.IsGuarding())
-	{
-		HandleGuardedAttack(attacker, target);
-		return;
-	}
-
 	int damage = CalculateRawDamage(attacker, attackData);
 	const bool isCritical =	CheckIsCritical(attacker);
 
@@ -89,13 +83,6 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 		actor.StartCooldown(BattleAction::Heal, 4);
 		break;
 
-	case BattleAction::Guard:
-		if (!actor.CanUseAction(BattleAction::Guard)) return;
-
-		Guard(actor);
-		actor.StartCooldown(BattleAction::Guard, 2);
-		break;
-
 	case BattleAction::AttackBuff:
 	case BattleAction::DefenseBuff:
 	{
@@ -103,6 +90,13 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 		ApplyStatusAction(actor, target, data);
 		break;
 	}
+
+	case BattleAction::Guard:
+		if (!actor.CanUseAction(BattleAction::Guard)) return;
+
+		actor.PrepareReaction(ReactionType::Guard);
+		actor.StartCooldown(BattleAction::Guard, 3);
+		break;
 
 	case BattleAction::Counter:
 		if (!actor.CanUseAction(BattleAction::Counter)) return;
@@ -129,27 +123,36 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 	
 }
 
-void BattleSystem::Guard(Character& character)
+void BattleSystem::HandleGuardedAttack(Character& attacker, Character& defender, const AttackData& attackData, bool isHit)
 {
-	if (!character.IsGuarding())
+
+	if ((attackData.action == BattleAction::PowerAttack))
 	{
-		character.StartGuarding();
+		if (!isHit)
+		{
+			eventBus.Publish(MissedEvent{attacker, defender, attackData.action});
+			return;
+		}
+
+		int damage = CalculateRawDamage(attacker, attackData);
+		const bool isCritical = CheckIsCritical(attacker);
+
+		if (isCritical)
+		{
+			damage = ApplyCriticalDamage(damage, attacker);
+		}
+
+		damage = CalculateFinalDamage(damage, defender);
+
+		ApplyAttackResult(attacker, defender, damage, attackData, isCritical);
+		defender.ClearPreparedReaction();
+		return;
 	}
+
+	defender.ClearPreparedReaction();
+	eventBus.Publish(ReactionEvent{ attacker, defender, ReactionType::Guard });
 }
 
-void BattleSystem::UnGuard(Character& character)
-{
-	if (character.IsGuarding())
-	{
-		character.StopGuarding();
-	}
-}
-
-void BattleSystem::HandleGuardedAttack(Character& attacker, Character& defender)
-{
-	eventBus.Publish(GuardEvent{ attacker, defender });
-	defender.StopGuarding();
-}
 
 bool BattleSystem::CheckItWasHit(const Character& attacker, const Character& target, const AttackData& data) const
 {
@@ -332,18 +335,22 @@ bool BattleSystem::ApplyReaction(Character& attacker, Character& target, const A
 		return false;
 	}
 
-	target.ClearPreparedReaction();
-
-	eventBus.Publish(ReactionEvent{ attacker, target, reaction });
-
 	switch (reaction)
 	{
+	case ReactionType::Guard:
+		HandleGuardedAttack(attacker, target, attackData, isHit);
+		return true;
+
 	case ReactionType::Counter:
+		target.ClearPreparedReaction();
 		HandleCounter(attacker,target,attackData,isHit);
+		eventBus.Publish(ReactionEvent{ attacker, target, reaction });
 		return true;
 
 	case ReactionType::Parry:
+		target.ClearPreparedReaction();
 		HandleParry(attacker,target,attackData,isHit);
+		eventBus.Publish(ReactionEvent{ attacker, target, reaction });
 		return true;
 
 	case ReactionType::None:
@@ -352,14 +359,14 @@ bool BattleSystem::ApplyReaction(Character& attacker, Character& target, const A
 	}
 }
 
-void BattleSystem::ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier)
+void BattleSystem::ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier, BattleAction sourceAction)
 {
 	int damage = static_cast<int>(counterAttacker.GetAttack() * damageMultiplier);
 	damage = CalculateFinalDamage(damage, target);
 	const int appliedDamage = target.ReceiveDamage(damage);
 
 	eventBus.Publish(DamagedEvent{counterAttacker, target, 
-		appliedDamage, DamageType::Counter, false, BattleAction::Counter});
+		appliedDamage, DamageType::Counter, false, sourceAction});
 	
 	if (target.IsDead())
 	{
@@ -393,17 +400,17 @@ void BattleSystem::HandleCounter(Character& attacker, Character& defender, const
 			return;
 		}
 
+		ApplyAttackStatus(attacker, defender, attackData);
 	}
 	else
 	{
 		eventBus.Publish(MissedEvent{ attacker,defender,attackData.action });
 	}
 
-	ApplyAttackStatus(attacker, defender, attackData);
 
 	if (!defender.IsDead())
 	{
-		ExecuteCounterAttack( defender,attacker, 0.8f);
+		ExecuteCounterAttack( defender,attacker, 0.8f, BattleAction::Counter);
 	}
 }
 
@@ -412,8 +419,6 @@ void BattleSystem::HandleParry(Character& attacker, Character& defender, const A
 	if (!isHit)
 	{
 		eventBus.Publish( MissedEvent{ attacker, defender, attackData.action });
-		ExecuteCounterAttack( defender, attacker, 1.2f);
-		return;
 	}
 
 	StatusEffect effect;
@@ -424,7 +429,7 @@ void BattleSystem::HandleParry(Character& attacker, Character& defender, const A
 	const StatusApplyResult result = defender.ApplyStatus(effect);
 
 	eventBus.Publish(AppliedStatusEvent{ defender, effect, result });
-	ExecuteCounterAttack( defender, attacker, 1.2f);
+	ExecuteCounterAttack( defender, attacker, 1.2f, BattleAction::Parry);
 }
 
 void BattleSystem::ResolveUnusedReaction(Character& waitingCharacter, BattleAction performedAction)

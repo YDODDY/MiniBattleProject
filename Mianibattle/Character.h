@@ -39,7 +39,6 @@ public :
 		const std::string& name,
 		const CharacterStats& stats)
 		: selfHp(stats.maxHp),
-		isGuarding(false),
 		name(name),
 		selfStats(stats)
 	{
@@ -59,8 +58,6 @@ public :
 
 	int ReceiveDamage(int damage);
 	int Heal(int healAmount);
-	void StartGuarding();
-	void StopGuarding();
 
 	bool CanUseAction(BattleAction action) const;
 	void StartCooldown(BattleAction action, int turns);
@@ -80,7 +77,6 @@ public :
 	std::string GetName() const;
 	int GetHp() const;
 	int GetMaxHp() const;
-	bool IsGuarding() const;
 
 	StatusApplyResult ApplyStatus(const StatusEffect& effect);
 	bool HasStatus(StatusType type) const;
@@ -98,7 +94,6 @@ public :
 private: 
 
 	int selfHp;
-	bool isGuarding = false;
 
 	std::string name;
 

@@ -24,13 +24,6 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 		}
 	);
 
-	eventBus.Subscribe<GuardEvent>(
-		[this](const GuardEvent& event)
-		{	
-			OnGuardAttack(event);
-		}
-	);
-	
 	eventBus.Subscribe<MissedEvent>(
 		[this](const MissedEvent& event)
 		{
@@ -73,7 +66,7 @@ void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
 	{
 		std::cout << "[PowerAttack!]\n";
 
-		if (event.target.IsGuarding())
+		if (event.target.GetPreparedReaction() == ReactionType::Guard)
 			std::cout << event.target.GetName()
 			<< "'s Guarding is failed!\n";
 	}
@@ -120,13 +113,6 @@ void ConsoleLogSystem::OnDead(const DeadEvent& event)
 	std::cout
 		<< event.deadCharacter.GetName()
 		<< " is dead!\n";
-}
-
-void ConsoleLogSystem::OnGuardAttack(const GuardEvent& event)
-{
-	std::cout
-		<< event.defender.GetName()
-		<< "Guarded " << event.attacker.GetName() << "'s Attack! \n";
 }
 
 void ConsoleLogSystem::OnMissedAttack(const MissedEvent& event)
@@ -200,6 +186,14 @@ void ConsoleLogSystem::OnReactedAttack(const ReactionEvent& event)
 {
 	switch (event.reaction)
 	{
+	case ReactionType::Guard:
+		std::cout
+			<< event.reactor.GetName()
+			<< " guarded "
+			<< event.attacker.GetName()
+			<< "'s attack!\n";
+		break;
+
 	case ReactionType::Counter:
 		std::cout
 			<< event.reactor.GetName()
