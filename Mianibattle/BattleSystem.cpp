@@ -130,6 +130,7 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 
 void BattleSystem::HandleGuardedAttack(Character& attacker, Character& defender, const AttackData& attackData, bool isHit)
 {
+	eventBus.Publish(ReactionEvent{ attacker, defender, ReactionType::Guard });
 
 	if ((attackData.action == BattleAction::PowerAttack))
 	{
@@ -155,7 +156,6 @@ void BattleSystem::HandleGuardedAttack(Character& attacker, Character& defender,
 	}
 
 	defender.ClearPreparedReaction();
-	eventBus.Publish(ReactionEvent{ attacker, defender, ReactionType::Guard });
 }
 
 
@@ -215,7 +215,7 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 		data.cooldownTurns = 5;
 
 		data.appliedStatus = StatusType::Stun;
-		data.statusTurns = 1;
+		data.statusTurns = 2;
 		break;
 
 	default:
@@ -360,14 +360,14 @@ bool BattleSystem::ApplyReaction(Character& attacker, Character& target, const A
 
 	case ReactionType::Counter:
 		target.ClearPreparedReaction();
-		HandleCounter(attacker,target,attackData,isHit);
 		eventBus.Publish(ReactionEvent{ attacker, target, reaction });
+		HandleCounter(attacker,target,attackData,isHit);
 		return true;
 
 	case ReactionType::Parry:
 		target.ClearPreparedReaction();
-		HandleParry(attacker,target,attackData,isHit);
 		eventBus.Publish(ReactionEvent{ attacker, target, reaction });
+		HandleParry(attacker,target,attackData,isHit);
 		return true;
 
 	case ReactionType::None:
@@ -438,6 +438,8 @@ void BattleSystem::HandleParry(Character& attacker, Character& defender, const A
 		eventBus.Publish( MissedEvent{ attacker, defender, attackData.action });
 	}
 
+	ExecuteCounterAttack( defender, attacker, 1.2f, BattleAction::Parry);
+
 	StatusEffect effect;
 	effect.type = StatusType::AttackUp;
 	effect.remainingTurns = 2;
@@ -446,7 +448,6 @@ void BattleSystem::HandleParry(Character& attacker, Character& defender, const A
 	const StatusApplyResult result = defender.ApplyStatus(effect);
 
 	eventBus.Publish(AppliedStatusEvent{ defender, effect, result });
-	ExecuteCounterAttack( defender, attacker, 1.2f, BattleAction::Parry);
 }
 
 void BattleSystem::ResolveUnusedReaction(Character& waitingCharacter, BattleAction performedAction)

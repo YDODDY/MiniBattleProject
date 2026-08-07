@@ -57,6 +57,8 @@ void Game::StartBattle(Character& player, Character& enemy)
 
 void Game::RunBattleLoop(Character& player, Character& enemy)
 {
+	Enemy& actualEnemy = static_cast<Enemy&>(enemy);
+
 	// 둘 다 살아있는 동안 반복
 	while (true)
 	{
@@ -70,6 +72,8 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 			BattleAction playerAction = battleSystem.RequestAction(player, enemy);
 
 			battleSystem.ExecuteAction(playerAction, player, enemy);
+
+			actualEnemy.RememberPlayerAction(playerAction);
 		}
 
 		if (CheckBattleEnd(player, enemy))

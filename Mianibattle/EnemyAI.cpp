@@ -75,26 +75,42 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
     const BattleAction selectedAction = scores.front().action;
 
     PrintDecisionLog(scores, selectedAction);
-    UpdateMemory(selectedAction);
 
+    PrintMemoryDebug(context);
     
     return selectedAction;
 }
 
-void EnemyAI::UpdateMemory(BattleAction selectedAction)
+void EnemyAI::ResetMemory()
 {
-    if (memory.hasPreviousAction &&
-        memory.lastAction == selectedAction)
+    memory = AIMemory{};
+}
+
+void EnemyAI::ObservePlayerAction(BattleAction action)
+{
+    memory.lastPlayerAction = action;
+    ++memory.totalPlayerTurns;
+
+    memory.recentPlayerActions.push_back(action);
+
+    if (memory.recentPlayerActions.size() > 5)
     {
-        ++memory.consecutiveUseCount;
-    }
-    else
-    {
-        memory.lastAction = selectedAction;
-        memory.consecutiveUseCount = 1;
-        memory.hasPreviousAction = true;
+        memory.recentPlayerActions.pop_front();
     }
 
+    if (IsDirectAttackAction(action))
+    {
+        ++memory.totalDirectAttacks;
+    }
+
+    if (action == BattleAction::PowerAttack)
+    {
+        memory.turnsSincePowerAttack = 0;
+    }
+    else if (memory.turnsSincePowerAttack < 999)
+    {
+        ++memory.turnsSincePowerAttack;
+    }
 }
 
 int EnemyAI::EvaluateAttack(const BattleContext& context) const
@@ -241,33 +257,27 @@ int EnemyAI::EvaluateDefenseBuff(const BattleContext& context) const
 int EnemyAI::EvaluateCounter(const BattleContext& context) const
 {
     const int threat = EstimateDirectAttackThreat(context);
+
     int score = 15;
+
     const float selfHpRatio = GetHpRatio(context.self);
-    const float targetHpRatio = GetHpRatio(context.target);
 
-    // Counter 피해를 감당하기 어려움
-    if (selfHpRatio <= 0.20f) score -= 50;
-    else if (selfHpRatio <= 0.40f) score -= 20;
+    // 피해를 받아야 하는 Counter 특성
+    if (selfHpRatio <= 0.20f) score -= 40;
+    else if (selfHpRatio <= 0.40f) score -= 15;
+    else if (selfHpRatio >= 0.60f) score += 10;
 
-    // 적당한 체력 여유가 있어 일부 피해를 감수할 수 있음
-    if (selfHpRatio >= 0.60f) score += 15;
+    // "공격이 올 것 같다" 정도부터 Counter 가치 상승
+    if (threat >= 40) score += 25;
 
-    // 상대가 공격력 강화 상태라 공격할 가능성이 높음
-    if (context.target.status.attackUp) score += 35;
+    if (threat >= 60) score += 15;
 
-    // Enemy 체력이 낮으면 Player가 마무리를 시도할 가능성이 있음
-    if (selfHpRatio <= 0.35f) score += 20;
-
-    // Player 체력이 낮으면 Player도 공격적으로 마무리하려 할 수 있음
-    if (targetHpRatio <= 0.30f) score += 15;
-
-    // 상대가 방어 강화 중이면 공격 대신 다른 행동을 할 가능성도 있음
-    if (context.target.status.defenseUp) score -= 10;
-
-    if (threat >= 40) score += 30;
-    if (threat >= 75) score -= 10;
+    // 공격 확신이 매우 높으면 Parry에게 일부 양보
+    if (threat >= 75)
+        score -= 15;
 
     score += GetRiskVariation(3);
+
     return std::max(0, score);
 }
 
@@ -296,7 +306,9 @@ int EnemyAI::EvaluateParry(const BattleContext& context) const
     // 상대가 비공격 준비 행동을 할 여지가 있다고 추정
     if (context.target.status.defenseUp) score -= 15;
 
-    if (threat >= 70) score += 70;
+    if (threat >= 60) score += 25;
+
+    if (threat >= 75) score += 45;
 
     score += GetRiskVariation(3);
 
@@ -312,11 +324,21 @@ int EnemyAI::EstimateDirectAttackThreat(const BattleContext& context) const
 {
     int threat = 20;
 
-    if (context.target.status.attackUp) threat += 40;
-    if (GetHpRatio(context.self) <= 0.35f) threat += 20;
-    if (GetHpRatio(context.target) <= 0.25f) threat += 10;
+    if (context.target.status.attackUp) threat += 25;
 
-    return threat;
+    const float recentAttackRatio = GetRecentDirectAttackRatio();
+    const float overallAttackRatio = GetOverallDirectAttackRatio();
+
+    // 최근 성향을 더 중요하게 봄
+    if (recentAttackRatio >= 0.8f) threat += 30;
+    else if (recentAttackRatio >= 0.6f) threat += 20;
+    else if (recentAttackRatio >= 0.4f) threat += 10;
+
+    // 전체적인 성향은 약하게 반영
+    if (overallAttackRatio >= 0.7f) threat += 10;
+    else if (overallAttackRatio <= 0.3f) threat -= 10;
+
+    return std::clamp(threat, 0, 100);
 }
 
 bool EnemyAI::HasActionControlStatus(const StatusSnapshot& status) const
@@ -424,5 +446,116 @@ void EnemyAI::PrintActionScores(const std::vector<ActionScore>& scores, BattleAc
         << "Choose        : "
         << ToString(selectedAction)
         << "\n\n";
+}
+
+bool EnemyAI::IsDirectAttackAction(BattleAction action) const
+{
+    switch (action)
+    {
+    case BattleAction::Attack:
+    case BattleAction::PowerAttack:
+    case BattleAction::PoisonAttack:
+    case BattleAction::StunAttack:
+        return true;
+    }
+
+    return false;
+}
+
+float EnemyAI::GetRecentDirectAttackRatio() const
+{
+    if (memory.recentPlayerActions.empty())
+        return 0.0f;
+
+    int directAttackCount = 0;
+
+    for (BattleAction action : memory.recentPlayerActions)
+    {
+        if (IsDirectAttackAction(action))
+        {
+            directAttackCount++;
+        }
+    }
+
+    return static_cast<float>(directAttackCount)
+        / memory.recentPlayerActions.size();
+}
+
+float EnemyAI::GetOverallDirectAttackRatio() const
+{
+    if (memory.totalPlayerTurns == 0)
+        return 0.0f;
+
+    return static_cast<float>(memory.totalDirectAttacks)
+        / memory.totalPlayerTurns;
+}
+
+bool EnemyAI::WasLastPlayerAction(BattleAction action) const
+{
+    return memory.lastPlayerAction == action;
+}
+
+bool EnemyAI::HasPlayerRecentlyUsed(BattleAction action)
+{
+    for (BattleAction act : memory.recentPlayerActions)
+    {
+        if (act == action)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void EnemyAI::PrintMemoryDebug(const BattleContext& context) const
+{
+
+    std::cout
+        << "\n========== AI MEMORY ==========\n";
+
+    std::cout
+        << "Player Turns         : "
+        << memory.totalPlayerTurns
+        << '\n';
+
+    std::cout
+        << "Last Player Action   : "
+        << ToString(memory.lastPlayerAction)
+        << '\n';
+
+    std::cout
+        << "Recent Attack Ratio  : "
+        << GetRecentDirectAttackRatio()
+        << '\n';
+
+    std::cout
+        << "Overall Attack Ratio : "
+        << GetOverallDirectAttackRatio()
+        << '\n';
+
+    std::cout
+        << "Turns Since PowerAtk : "
+        << memory.turnsSincePowerAttack
+        << '\n';
+
+    std::cout
+        << "Direct Attack Threat : "
+        << EstimateDirectAttackThreat(context)
+        << '\n';
+
+    std::cout
+        << "Recent Actions       : ";
+
+    for (BattleAction action :
+    memory.recentPlayerActions)
+    {
+        std::cout
+            << ToString(action)
+            << " ";
+    }
+
+    std::cout
+        << "\n================================\n";
 }
 

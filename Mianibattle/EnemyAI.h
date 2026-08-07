@@ -4,13 +4,8 @@
 #include "BattleContext.h"
 #include <vector>
 #include <unordered_map>
+#include "AIMemory.h"
 
-struct AIMemory
-{
-	BattleAction lastAction = BattleAction::Attack;
-	int consecutiveUseCount = 0;
-	bool hasPreviousAction = false;
-};
 
 struct ActionScore
 {
@@ -23,10 +18,12 @@ class EnemyAI
 public:
 	BattleAction ChooseAction(const BattleContext& context);
 
+	void ResetMemory();
+	void ObservePlayerAction(BattleAction action);
+
 private:
 
 	AIMemory memory;
-	void UpdateMemory(BattleAction selectedAction);
 
 	int EvaluateAttack(const BattleContext& context) const;
 	int EvaluatePowerAttack(const BattleContext& context) const;
@@ -49,4 +46,11 @@ private:
 	void PrintDecisionLog(const std::vector<ActionScore>& scores, BattleAction selectedAction) const;
 	void PrintActionScores(const std::vector<ActionScore>& scores, BattleAction selectedAction) const;
 		
+	bool IsDirectAttackAction(BattleAction action) const;
+
+	float GetRecentDirectAttackRatio() const;
+	float GetOverallDirectAttackRatio() const;
+
+	bool WasLastPlayerAction(BattleAction action) const;
+	bool HasPlayerRecentlyUsed(BattleAction action);
 };

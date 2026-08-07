@@ -238,15 +238,6 @@ void ConsoleLogSystem::OnReactionFailed(const ReactionFailedEvent& event)
 		<< "'s "
 		<< ToString(event.reaction)
 		<< " failed!\n";
-
-	if (event.statusType != StatusType::None)
-	{
-		std::cout
-			<< event.character.GetName()
-			<< " received "
-			<< ToString(event.statusType)
-			<< ".\n";
-	}
 }
 
 void ConsoleLogSystem::OnStatusExpired(const StatusExpiredEvent& event)
