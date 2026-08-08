@@ -53,4 +53,6 @@ private:
 
 	bool WasLastPlayerAction(BattleAction action) const;
 	bool HasPlayerRecentlyUsed(BattleAction action);
-};
+
+	void PrintMemoryDebug(const BattleContext& context) const;
+ };

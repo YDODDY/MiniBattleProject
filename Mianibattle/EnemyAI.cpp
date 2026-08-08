@@ -74,8 +74,34 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
 
     const BattleAction selectedAction = scores.front().action;
 
-    PrintDecisionLog(scores, selectedAction);
+    if (memory.totalPlayerTurns <= 1)
+    {
+        const int bestScore = scores.front().score;
+        const int openingThreshold = 30;
+        std::vector<ActionScore> openingCandidates;
+        for (const ActionScore& actionScore : scores)
+        {
+            if (actionScore.action == BattleAction::Heal)
+                continue;
 
+            if (actionScore.score >= bestScore - openingThreshold)
+            {
+                openingCandidates.push_back(actionScore);
+            }
+        }
+
+        const int randomIndex = rand() % openingCandidates.size();
+
+        const BattleAction openingAction = openingCandidates[randomIndex].action;
+
+        PrintDecisionLog(scores, openingAction);
+        PrintMemoryDebug(context);
+
+        return openingAction;
+    }
+
+
+    PrintDecisionLog(scores, selectedAction);
     PrintMemoryDebug(context);
     
     return selectedAction;
@@ -164,14 +190,16 @@ int EnemyAI::EvaluateGuard(const BattleContext& context) const
 {
     if (!context.actionControl.canGuard) return 0;
 
+    // 기본 선호도 점수 (너무 안전추구형은 X)
     int score = 10;
 
     const float selfHpRatio = GetHpRatio(context.self);
+    // 체력이 낮아질 수록 방어적으로 바뀜
     if (selfHpRatio <= 0.5f) score += 25;
     if (selfHpRatio <= 0.3f) score += 35;
-    // Heal 이 더 급한 상황이면 guard 밀리도록
+    
+    // 거의 치명상이다 (PowerAttack 같은거 크리티컬 맞으면 죽을 것 같다) 싶으면 Heal 이 더 급하도록 
     if (selfHpRatio <= 0.2f) score -= 20;
-    if (selfHpRatio > 0.3f && selfHpRatio <= 0.5f) score += 50;
 
     return score;
 }
@@ -258,21 +286,22 @@ int EnemyAI::EvaluateCounter(const BattleContext& context) const
 {
     const int threat = EstimateDirectAttackThreat(context);
 
+    // 기본 선호도 점수, Guard 보다는 높게 -> 체력이 너무 낮아 위험한 상황 아니면 조금 공격적인 방어 느낌을 선호
+    // 근데 체력이 너무 낮아지면 쿨타임도 더 짧고 더 안전형인 Gaurd 선호하게 되는 느낌
     int score = 15;
 
     const float selfHpRatio = GetHpRatio(context.self);
 
-    // 피해를 받아야 하는 Counter 특성
+    // 체력이 깎이고 있긴 한데 아직 버틸만 한 것 같으면 (한방에는 안죽을 것 같은 체력상황 즈음?) 방어적인 행동을 고르되, 아직 상대에게 데미지를 입히려는 성향으로
     if (selfHpRatio <= 0.20f) score -= 40;
     else if (selfHpRatio <= 0.40f) score -= 15;
     else if (selfHpRatio >= 0.60f) score += 10;
 
-    // "공격이 올 것 같다" 정도부터 Counter 가치 상승
+    // 플레이어 행동 성향이 공격 위주 같으면 Counter 도 자주 섞어 쓰기 (체력이 엄청 낮은거 아닌 이상) 
     if (threat >= 40) score += 25;
-
     if (threat >= 60) score += 15;
 
-    // 공격 확신이 매우 높으면 Parry에게 일부 양보
+    // 플레이어가 계속 공격만 한다? 일단 Parry 도 좀 섞어주면서, 조금 더 위협적인 역공격형 방어를 써도 되겠다는 판정 들어갈 수 있음 
     if (threat >= 75)
         score -= 15;
 
@@ -284,30 +313,30 @@ int EnemyAI::EvaluateCounter(const BattleContext& context) const
 int EnemyAI::EvaluateParry(const BattleContext& context) const
 {
     const int threat = EstimateDirectAttackThreat(context);
-    int score = 5;
     const float selfHpRatio = GetHpRatio(context.self);
     const float targetHpRatio = GetHpRatio(context.target);
 
-    // 상대가 AttackUp 상태면 직접 공격 가능성이 크게 상승
-    if (context.target.status.attackUp) score += 45;
+    // 기본 선호도 점수. 실패 패널티가 현재 제일 크기 때문에 guard/counter 보다는 좀 더 고심해서 쓰는 느낌
+    int score = 5;
 
-    // 낮은 체력에서는 피해 무효의 가치가 매우 큼
-    if (selfHpRatio <= 0.30f) score += 30;
+    // 상대가 슬슬 공격적으로 압박할 가능성이 있어지는 체력상태면, 그걸 역이용해서 Parry 로 조금 판 뒤집기 해보려는 느낌
+    if (selfHpRatio <= 0.4) score += 20;
 
-    // 하지만 너무 낮은 체력에서 실패하면 치명적
+    // 낮은 체력에서는 피해 무효의 가치가 매우 큼 (Guard 할지 Parry 할지가 여기서 판가름 날 듯, Guard 해보고 Guard 못하면 Parry 도 하고 하는 느낌으로. ) 
+    // 꽤 위험한 상황부터는 Counter 도 데미지+상태이상 받는게 부담스러워 질 수 있기 때문에 Parry 를 더 선호하게 되는 느낌
+    if (selfHpRatio <= 0.3) score += 30;
+
+    // 근데 진짜 한방 제대로 맞으면 바로 죽을 정도로 너무 체력이 낮다? -> 일단 heal 도 해야할거고 (1순위일듯), 도박을 걸 여유는 아님 
     if (selfHpRatio <= 0.15f) score -= 15;
 
-    // 상대가 마무리를 노릴 만한 상황
-    if (selfHpRatio <= 0.35f) score += 20;
-
-    // 상대 체력이 낮으면 공격으로 승부를 보려 할 가능성
+    // 상대도 낮은 HP에서 피니시를 노리고 직접 공격할 가능성이 있다면 역이용 가능
     if (targetHpRatio <= 0.25f) score += 10;
 
-    // 상대가 비공격 준비 행동을 할 여지가 있다고 추정
+    // 상대가 DefenseUp 상황이면 상대가 현재 조금 불리한 상황일 수도 있음, 방어형 행동 보다는 압박하는게 더 유리할 수 있기에 parry 후순위
     if (context.target.status.defenseUp) score -= 15;
 
+    // 상대가 꽤 공격적이면 슬슬 선호도 올라감 
     if (threat >= 60) score += 25;
-
     if (threat >= 75) score += 45;
 
     score += GetRiskVariation(3);
@@ -329,12 +358,12 @@ int EnemyAI::EstimateDirectAttackThreat(const BattleContext& context) const
     const float recentAttackRatio = GetRecentDirectAttackRatio();
     const float overallAttackRatio = GetOverallDirectAttackRatio();
 
-    // 최근 성향을 더 중요하게 봄
+    // 최근 행동 선택 성향을 더 비중있게 두고 판단 
     if (recentAttackRatio >= 0.8f) threat += 30;
     else if (recentAttackRatio >= 0.6f) threat += 20;
     else if (recentAttackRatio >= 0.4f) threat += 10;
 
-    // 전체적인 성향은 약하게 반영
+    // 전체적으로 어떤 느낌인지 틀 잡는 정도로 판정
     if (overallAttackRatio >= 0.7f) threat += 10;
     else if (overallAttackRatio <= 0.3f) threat -= 10;
 
