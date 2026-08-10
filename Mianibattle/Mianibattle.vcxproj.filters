@@ -116,6 +116,9 @@
     <ClInclude Include="AIMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RoundAction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ConsoleLogSystem.h">

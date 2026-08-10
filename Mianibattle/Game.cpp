@@ -24,9 +24,28 @@ void Game::Run()
 
 	Player player("Player", defaultStats);
 	Enemy enemy("Enemy", defaultStats);
+
+	int playerFirst = 0;
+	int enemyFirst = 0;
+
+	for (int i = 0; i < 100; ++i)
+	{
+		TurnOrder order = SetTurnOrder(player, enemy);
+
+		if (order.firstActor == &player)
+			++playerFirst;
+		else
+			++enemyFirst;
+	}
+
+	std::cout
+		<< "Player First : " << playerFirst << '\n'
+		<< "Enemy First  : " << enemyFirst << '\n';
+	/*
 	StartBattle(player, enemy);
 	RunBattleLoop(player, enemy);
 	ShowBattleResult(player, enemy);
+	*/
 }
 
 bool Game::CheckBattleEnd(Character& player, Character& enemy)
@@ -118,4 +137,22 @@ void Game::ShowBattleResult(Character& player, Character& enemy)
 	default:
 		break;
 	}
+}
+
+TurnOrder Game::SetTurnOrder(Character& player, Character& enemy)
+{
+	TurnOrder order;
+
+	if (rand() % 2 == 0)
+	{
+		order.firstActor = &player;
+		order.secondActor = &enemy;
+	}
+	else
+	{
+		order.firstActor = &enemy;
+		order.secondActor = &player;
+	}
+
+	return order;
 }

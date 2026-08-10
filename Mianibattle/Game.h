@@ -5,6 +5,12 @@
 #include "BattleResult.h"
 #include "ConsoleLogSystem.h"
 
+struct TurnOrder
+{
+	Character* firstActor = nullptr;
+	Character* secondActor = nullptr;
+};
+
 class Game
 {
 public:
@@ -23,5 +29,7 @@ private:
 	void StartBattle(Character& player, Character& enemy);
 	void RunBattleLoop(Character& player, Character& enemy);
 	void ShowBattleResult(Character& player, Character& enemy);
+
+	TurnOrder SetTurnOrder(Character& player, Character& enemy);
 
 };
