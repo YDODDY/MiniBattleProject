@@ -153,6 +153,8 @@
     <ClCompile Include="Status.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ActionPhaseEndResult.h" />
+    <ClInclude Include="ActionPhaseStartResult.h" />
     <ClInclude Include="ActionTarget.h" />
     <ClInclude Include="AIMemory.h" />
     <ClInclude Include="AttackData.h" />

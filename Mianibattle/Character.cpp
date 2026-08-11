@@ -258,4 +258,48 @@ bool Character::HasPreparedReaction() const
 	return preparedReaction != ReactionType::None;
 }
 
+ActionPhaseEndResult Character::ProcessActionPhaseEnd()
+{
+	ActionPhaseEndResult result;
+
+	for (const StatusEffect& effect : status.GetEffects())
+	{
+		switch (effect.type)
+		{
+		case StatusType::Poison:
+			ReceiveDamage(effect.value);
+
+			result.damage += effect.value;
+			result.damageSource = StatusType::Poison;
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	result.expiredStatuses = status.TickTurn();
+
+	TickCooldowns();
+
+	return result;
+}
+
+ActionPhaseStartResult Character::ProcessActionPhaseStart()
+{
+	ActionPhaseStartResult result;
+
+	for (const StatusEffect& effect : status.GetEffects())
+	{
+		if (effect.type == StatusType::Stun)
+		{
+			result.canAct = false;
+			result.preventedBy = StatusType::Stun;
+			break;
+		}
+	}
+
+	return result;
+}
+
 

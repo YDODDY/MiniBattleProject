@@ -4,6 +4,7 @@
 #include "EventBus.h"
 #include "BattleResult.h"
 #include "ConsoleLogSystem.h"
+#include "RoundAction.h"
 
 struct TurnOrder
 {
@@ -30,6 +31,11 @@ private:
 	void RunBattleLoop(Character& player, Character& enemy);
 	void ShowBattleResult(Character& player, Character& enemy);
 
+	TurnOrder order;
 	TurnOrder SetTurnOrder(Character& player, Character& enemy);
+	void PrintOrder(TurnOrder& order);
 
+	RoundContext CreateRoundContext(const TurnOrder& order);
+
+	bool ResolveBasicRound(RoundContext& context);
 };

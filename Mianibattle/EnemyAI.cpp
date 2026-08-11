@@ -90,19 +90,24 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
             }
         }
 
+        if (openingCandidates.empty())
+        {
+            return scores.front().action;
+        }
+
         const int randomIndex = rand() % openingCandidates.size();
 
         const BattleAction openingAction = openingCandidates[randomIndex].action;
 
-        PrintDecisionLog(scores, openingAction);
-        PrintMemoryDebug(context);
+  //     PrintDecisionLog(scores, openingAction);
+ //       PrintMemoryDebug(context);
 
         return openingAction;
     }
 
 
-    PrintDecisionLog(scores, selectedAction);
-    PrintMemoryDebug(context);
+//    PrintDecisionLog(scores, selectedAction);
+ //   PrintMemoryDebug(context);
     
     return selectedAction;
 }

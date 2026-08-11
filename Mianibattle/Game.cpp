@@ -25,27 +25,13 @@ void Game::Run()
 	Player player("Player", defaultStats);
 	Enemy enemy("Enemy", defaultStats);
 
-	int playerFirst = 0;
-	int enemyFirst = 0;
-
-	for (int i = 0; i < 100; ++i)
-	{
-		TurnOrder order = SetTurnOrder(player, enemy);
-
-		if (order.firstActor == &player)
-			++playerFirst;
-		else
-			++enemyFirst;
-	}
-
-	std::cout
-		<< "Player First : " << playerFirst << '\n'
-		<< "Enemy First  : " << enemyFirst << '\n';
-	/*
+	order = SetTurnOrder(player, enemy);
+	PrintOrder(order);
+	
 	StartBattle(player, enemy);
 	RunBattleLoop(player, enemy);
 	ShowBattleResult(player, enemy);
-	*/
+	
 }
 
 bool Game::CheckBattleEnd(Character& player, Character& enemy)
@@ -77,40 +63,25 @@ void Game::StartBattle(Character& player, Character& enemy)
 void Game::RunBattleLoop(Character& player, Character& enemy)
 {
 	Enemy& actualEnemy = static_cast<Enemy&>(enemy);
+	int roundNum = 1;
 
-	// 둘 다 살아있는 동안 반복
-	while (true)
+	while (!player.IsDead() && !enemy.IsDead())
 	{
-		TurnStartResult playerTurn = battleSystem.StartTurn(player);
+		RoundContext context = CreateRoundContext(order);
+		context.roundNumber = roundNum;
 
-		if (CheckBattleEnd(player, enemy))
+		context.first.action = battleSystem.RequestAction
+		(*context.first.actor, *context.first.target);
+		
+		context.second.action = battleSystem.RequestAction
+		(*context.second.actor, *context.second.target);
+
+		battleSystem.RevealActions(context);
+
+		if (ResolveBasicRound(context))
 			break;
 
-		if (playerTurn.canAct)
-		{
-			BattleAction playerAction = battleSystem.RequestAction(player, enemy);
-
-			battleSystem.ExecuteAction(playerAction, player, enemy);
-
-			actualEnemy.RememberPlayerAction(playerAction);
-		}
-
-		if (CheckBattleEnd(player, enemy))
-			break;
-
-		TurnStartResult enemyTurn = battleSystem.StartTurn(enemy);
-
-		if (CheckBattleEnd(player, enemy))
-			break;
-
-		if (enemyTurn.canAct)
-		{
-			BattleAction enemyAction = battleSystem.RequestAction(enemy,player);
-			battleSystem.ExecuteAction(enemyAction, enemy, player);
-		}
-
-		if (CheckBattleEnd(player, enemy))
-			break;
+		++roundNum;
 	}
 }
 
@@ -156,3 +127,67 @@ TurnOrder Game::SetTurnOrder(Character& player, Character& enemy)
 
 	return order;
 }
+
+void Game::PrintOrder(TurnOrder& order)
+{
+	std::cout << "=== TURN ORDER ===\n"
+		<< "First : " << order.firstActor->GetName() << "\n"
+		<< "Second : " << order.secondActor->GetName() << "\n";
+}
+
+RoundContext Game::CreateRoundContext(const TurnOrder& order)
+{
+	RoundContext context;
+
+	context.first.actor = order.firstActor;
+	context.first.target = order.secondActor;
+
+	context.second.actor = order.secondActor;
+	context.second.target = order.firstActor;
+
+	return context;
+}
+
+bool Game::ResolveBasicRound(RoundContext& context)
+{
+	// first
+	ActionPhaseStartResult firstStart =
+		battleSystem.StartActionPhase(*context.first.actor);
+
+	if (firstStart.canAct)
+	{
+		battleSystem.ExecuteAction(
+			context.first.action,
+			*context.first.actor,
+			*context.first.target);
+	}
+
+	battleSystem.EndActionPhase(*context.first.actor);
+
+	if (CheckBattleEnd(
+		*context.first.actor,
+		*context.second.actor))
+	{
+		return true;
+	}
+
+	// second
+	ActionPhaseStartResult secondStart =
+		battleSystem.StartActionPhase(*context.second.actor);
+
+	if (secondStart.canAct)
+	{
+		battleSystem.ExecuteAction(
+			context.second.action,
+			*context.second.actor,
+			*context.second.target);
+	}
+
+	battleSystem.EndActionPhase(*context.second.actor);
+
+	return CheckBattleEnd(
+		*context.first.actor,
+		*context.second.actor);
+}
+
+

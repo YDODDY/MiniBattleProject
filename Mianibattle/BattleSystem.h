@@ -6,6 +6,8 @@
 #include "AttackData.h"
 #include "BattleContextBuilder.h"
 #include "StatusActionData.h"
+#include "RoundAction.h"
+#include <cstring>
 
 // 객체를 실제로 만들려면 (참조X) 크기, 맴버, 생성자 모두 알아야 하기 때문에 전방 선언 만으로는 모른다. 그래서 include 해줘야 함
 
@@ -62,9 +64,16 @@ public:
 
 	void ApplyAttackStatus(Character& attacker, Character& target, const AttackData& attackData);
 
+	void RevealActions(const RoundContext& context);
+	ActionPhaseStartResult StartActionPhase(Character& character);
+	void EndActionPhase(Character& character);
+
 private:
 
 	EventBus& eventBus;
 
 	BattleContextBuilder builder;
+
+	std::string ToString(const BattleAction& action);
+
 };

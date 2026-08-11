@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <algorithm>
+#include "RoundAction.h"
 
 TurnStartResult BattleSystem::StartTurn(Character& character)
 {
@@ -499,4 +500,100 @@ void BattleSystem::ApplyAttackStatus(Character& attacker, Character& target, con
 	eventBus.Publish( AppliedStatusEvent{ target,effect,result });
 }
 
+void BattleSystem::RevealActions(const RoundContext& context)
+{
+	std::cout << "\n=== Round " << context.roundNumber << " ===\n";
 
+	std::cout << "\n=== ACTION REVEAL ===\n";
+
+	std::cout
+		<< context.first.actor->GetName()
+		<< " : "
+		<< ToString(context.first.action)
+		<< '\n';
+
+	std::cout
+		<< context.second.actor->GetName()
+		<< " : "
+		<< ToString(context.second.action)
+		<< '\n';
+}
+
+ActionPhaseStartResult BattleSystem::StartActionPhase(Character& character)
+{
+	ActionPhaseStartResult result =
+		character.ProcessActionPhaseStart();
+
+	if (!result.canAct)
+	{
+		eventBus.Publish(
+			ActionPreventedEvent{
+				character,
+				result.preventedBy
+			});
+	}
+
+	return result;
+
+}
+
+void BattleSystem::EndActionPhase(Character& character)
+{
+	ActionPhaseEndResult result =
+		character.ProcessActionPhaseEnd();
+
+	if (result.damage > 0)
+	{
+		eventBus.Publish(
+			DamageOverTimeEvent{
+				character,
+				result.damage,
+				result.damageSource
+			});
+	}
+
+	for (StatusType expired : result.expiredStatuses)
+	{
+		eventBus.Publish(
+			StatusExpiredEvent{
+				character,
+				expired
+			});
+	}
+
+	if (character.IsDead())
+	{
+		eventBus.Publish(DeadEvent{ character });
+	}
+}
+
+std::string BattleSystem::ToString(const BattleAction& action)
+{
+	switch (action)
+	{
+	case::BattleAction::Attack:
+		return "Attack";
+	case::BattleAction::PowerAttack:
+		return "PowerAttack";
+	case::BattleAction::PoisonAttack:
+		return "PoisonAttack";
+	case::BattleAction::StunAttack:
+		return "StunAttack";
+	case::BattleAction::Heal:
+		return "Heal";
+	case::BattleAction::Guard:
+		return "Guard";
+	case::BattleAction::AttackBuff:
+		return "AttackBuff";
+	case::BattleAction::DefenseBuff:
+		return "DefenseBuff";
+	case::BattleAction::Counter:
+		return "Counter";
+	case::BattleAction::Parry:
+		return "Parry";
+
+
+	default:
+		return "Nothing.";
+	}
+}

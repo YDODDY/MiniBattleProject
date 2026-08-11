@@ -6,6 +6,8 @@
 #include "TurnStartResult.h"
 #include "BattleContext.h"
 #include "ReactionType.h"
+#include "ActionPhaseEndResult.h"
+#include "ActionPhaseStartResult.h"
 
 struct ActionCooldown
 {
@@ -90,6 +92,9 @@ public :
 	ReactionType GetPreparedReaction() const;
 	void ClearPreparedReaction();
 	bool HasPreparedReaction() const;
+
+	ActionPhaseEndResult ProcessActionPhaseEnd();
+	ActionPhaseStartResult ProcessActionPhaseStart();
 
 private: 
 

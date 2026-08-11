@@ -11,6 +11,8 @@ struct RoundAction
 
 struct RoundContext
 {
+	int roundNumber = 0;
+
 	RoundAction first;
 	RoundAction second;
 };
