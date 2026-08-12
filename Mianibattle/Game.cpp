@@ -76,10 +76,20 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 		context.second.action = battleSystem.RequestAction
 		(*context.second.actor, *context.second.target);
 
+		RoundResolutionPlan plan = battleSystem.ChooseActionComplete(context);
+
 		battleSystem.RevealActions(context);
 
-		if (ResolveBasicRound(context))
-			break;
+		if (!plan.hasInteraction)
+		{
+			if (ResolveBasicRound(context))
+				break;
+		}
+		else
+		{
+			if (ResolveInteractionRound(context, plan))
+				break;
+		}
 
 		++roundNum;
 	}
@@ -184,6 +194,21 @@ bool Game::ResolveBasicRound(RoundContext& context)
 	}
 
 	battleSystem.EndActionPhase(*context.second.actor);
+
+	return CheckBattleEnd(
+		*context.first.actor,
+		*context.second.actor);
+}
+
+bool Game::ResolveInteractionRound(RoundContext& context, RoundResolutionPlan& plan)
+{
+	ActionPhaseStartResult firstStart =
+		battleSystem.StartActionPhase(*context.first.actor);
+
+	battleSystem.ResolveInteraction(context, plan);
+
+	ActionPhaseStartResult secondStart =
+		battleSystem.StartActionPhase(*context.second.actor);
 
 	return CheckBattleEnd(
 		*context.first.actor,

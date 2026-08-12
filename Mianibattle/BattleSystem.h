@@ -8,6 +8,7 @@
 #include "StatusActionData.h"
 #include "RoundAction.h"
 #include <cstring>
+#include "InteractionType.h"
 
 // 객체를 실제로 만들려면 (참조X) 크기, 맴버, 생성자 모두 알아야 하기 때문에 전방 선언 만으로는 모른다. 그래서 include 해줘야 함
 
@@ -32,6 +33,9 @@ public:
 	void Heal(Character& character, int healAmount);
 
 	void ExecuteAction(BattleAction action, Character& actor, Character& target);
+	void ResolveInteraction(RoundContext& context, RoundResolutionPlan& plan);
+	void ResolveSuccessfullInteraction(InteractionPlan& interaction);
+	void ResolveFailedInteraction(InteractionPlan& interaction);
 
 	void HandleGuardedAttack(Character& attacker, Character& actor, const AttackData& attackData, bool isHit);
 
@@ -54,6 +58,7 @@ public:
 	void ApplyStatusEffect(Character& target, StatusType type, int turns, float value);
 
 	bool IsDirectAttack(BattleAction action) const;
+	bool IsInteractionAction(BattleAction action) const;
 
 	bool ApplyReaction(Character& attacker, Character& target, const AttackData& attackData, bool isHit);
 	void ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier, BattleAction sourceAction);
@@ -67,6 +72,21 @@ public:
 	void RevealActions(const RoundContext& context);
 	ActionPhaseStartResult StartActionPhase(Character& character);
 	void EndActionPhase(Character& character);
+
+	InteractionType GetInteractionType(BattleAction reactorAction) const;
+	RoundResolutionPlan ChooseActionComplete(RoundContext& context);
+	void AnalyzeInteraction(RoundAction& reactor, RoundAction& opponent, RoundResolutionPlan& plan);
+
+	void ResolveGuardSuccess(InteractionPlan& interaction);
+	void ResolveCounterSuccess(InteractionPlan& interaction);
+	void ResolveParrySuccess(InteractionPlan& interaction);
+	
+	void ResolveCounterFailed(InteractionPlan& interaction);
+	void ResolveParryFailed(InteractionPlan& interaction);
+
+	void ResolveGuardInteraction(Character& attacker, Character& guarder, const AttackData& attackData);
+	void ResolveCounterInteraction(Character& attacker, Character& counter, const AttackData& attackData);
+	void ResolveParryInteraction(Character& attacker, Character& counter, const AttackData& attackData);
 
 private:
 

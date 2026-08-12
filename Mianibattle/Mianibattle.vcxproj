@@ -171,6 +171,7 @@
     <ClInclude Include="Event.h" />
     <ClInclude Include="EventBus.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="InteractionType.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="ReactionType.h" />
     <ClInclude Include="RoundAction.h" />

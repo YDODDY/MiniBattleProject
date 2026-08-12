@@ -38,4 +38,5 @@ private:
 	RoundContext CreateRoundContext(const TurnOrder& order);
 
 	bool ResolveBasicRound(RoundContext& context);
+	bool ResolveInteractionRound(RoundContext& context, RoundResolutionPlan& plan);
 };
