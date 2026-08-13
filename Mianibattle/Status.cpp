@@ -41,12 +41,20 @@ void Status::Remove(StatusType type)
 	}
 }
 
+void Status::Consume(StatusType type)
+{
+	Remove(type);
+}
+
 std::vector<StatusType> Status::TickTurn()
 {
 	std::vector<StatusType> expiredStatuses;
 
 	for (StatusEffect& effect : effects)
 	{
+		if (effect.type == StatusType::Stun)
+			continue;
+
 		effect.remainingTurns--;
 		if (effect.remainingTurns <= 0)
 		{

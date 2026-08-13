@@ -256,7 +256,7 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 		data.cooldownTurns = 5;
 
 		data.appliedStatus = StatusType::Stun;
-		data.statusTurns = 2;
+		data.statusTurns = 1;
 		break;
 
 	default:
@@ -580,6 +580,13 @@ ActionPhaseStartResult BattleSystem::StartActionPhase(Character& character)
 			});
 	}
 
+	if (result.preventedBy == StatusType::Stun)
+	{
+		eventBus.Publish(
+			StatusExpiredEvent{
+				character, StatusType::Stun});
+	}
+
 	return result;
 
 }
@@ -667,10 +674,10 @@ void BattleSystem::AnalyzeInteraction(RoundAction& reactor, RoundAction& opponen
             IsDirectAttack(opponent.action)
                 ? InteractionResult::Success
                 : InteractionResult::Failed,
-            &reactor,
             IsDirectAttack(opponent.action)
                 ? &opponent
-                : nullptr
+                : nullptr,
+				& reactor,
 			    });
 
         break;
@@ -681,11 +688,11 @@ void BattleSystem::AnalyzeInteraction(RoundAction& reactor, RoundAction& opponen
 			IsDirectAttack(opponent.action)
 				? InteractionResult::Success
 				: InteractionResult::Failed,
-			&reactor,
 			IsDirectAttack(opponent.action)
 				? &opponent
-				: nullptr
-				});
+				: nullptr,
+				& reactor,
+					});
 
 		break;
 
@@ -726,10 +733,9 @@ void BattleSystem::ResolveCounterSuccess(InteractionPlan & interaction)
 	if (!isHit)
 	{
 		eventBus.Publish(MissedEvent{ attacker, counter, attackAction });
-		return;
 	}
 
-	ResolveCounterInteraction(counter, attacker, attackData);
+	ResolveCounterInteraction(attacker, counter, attackData);
 }
 
 void BattleSystem::ResolveParrySuccess(InteractionPlan & interaction)
@@ -745,7 +751,6 @@ void BattleSystem::ResolveParrySuccess(InteractionPlan & interaction)
 	if (!isHit)
 	{
 		eventBus.Publish(MissedEvent{ attacker, counter, attackAction });
-		return;
 	}
 
 	ResolveParryInteraction(counter, attacker, attackData);
@@ -753,13 +758,13 @@ void BattleSystem::ResolveParrySuccess(InteractionPlan & interaction)
 
 void BattleSystem::ResolveCounterFailed(InteractionPlan & interaction)
 {
-	Character& counter = *interaction.attacker->actor;
+	Character& counter = *interaction.reactor->actor;
 	ApplyStatusEffect(counter, StatusType::DefenseDown, 3, 0.5f);
 }
 
 void BattleSystem::ResolveParryFailed(InteractionPlan & interaction)
 {
-	Character& counter = *interaction.attacker->actor;
+	Character& counter = *interaction.reactor->actor;
 	ApplyStatusEffect(counter, StatusType::DirectAttackLocked, 2, 0.0f);
 }
 
@@ -798,7 +803,7 @@ void BattleSystem::ResolveCounterInteraction(Character& attacker, Character& cou
 		damage = ApplyCriticalDamage(damage, attacker);
 	}
 
-	damage = CalculateFinalDamage(damage, counter);
+	damage = CalculateFinalDamage(damage, attacker);
 	damage = static_cast<int>(damage * 0.5f);
 	const int appliedDamage = counter.ReceiveDamage(damage);
 

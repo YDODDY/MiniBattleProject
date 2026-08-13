@@ -289,14 +289,12 @@ ActionPhaseStartResult Character::ProcessActionPhaseStart()
 {
 	ActionPhaseStartResult result;
 
-	for (const StatusEffect& effect : status.GetEffects())
+	if(status.Has(StatusType::Stun))
 	{
-		if (effect.type == StatusType::Stun)
-		{
-			result.canAct = false;
-			result.preventedBy = StatusType::Stun;
-			break;
-		}
+		result.canAct = false;
+		result.preventedBy = StatusType::Stun;
+		
+		status.Consume(StatusType::Stun);	
 	}
 
 	return result;

@@ -51,6 +51,7 @@ public:
 	void Add(StatusEffect effect);
 	bool Has(StatusType type) const;
 	void Remove(StatusType type);
+	void Consume(StatusType type);
 	std::vector<StatusType> TickTurn();
 
 	const StatusEffect* Find(StatusType type) const;

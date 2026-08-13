@@ -205,10 +205,14 @@ bool Game::ResolveInteractionRound(RoundContext& context, RoundResolutionPlan& p
 	ActionPhaseStartResult firstStart =
 		battleSystem.StartActionPhase(*context.first.actor);
 
-	battleSystem.ResolveInteraction(context, plan);
-
 	ActionPhaseStartResult secondStart =
 		battleSystem.StartActionPhase(*context.second.actor);
+
+	battleSystem.ResolveInteraction(context, plan);
+
+	battleSystem.EndActionPhase(*context.first.actor);
+
+	battleSystem.EndActionPhase(*context.second.actor);
 
 	return CheckBattleEnd(
 		*context.first.actor,
