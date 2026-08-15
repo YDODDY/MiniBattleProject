@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include "AIMemory.h"
+#include "AIMemoryUpdateData.h"
 
 
 struct ActionScore
@@ -20,6 +21,7 @@ public:
 
 	void ResetMemory();
 	void ObservePlayerAction(BattleAction action);
+	void RememberRound(const AIMemoryUpdateData& data);
 
 private:
 
@@ -36,6 +38,9 @@ private:
 	int EvaluateCounter(const BattleContext& context) const;
 	int EvaluateParry(const BattleContext& context) const;
 
+	int GetRoundsSincePlayerUsed(BattleAction action) const;
+	bool PlayerLikelyCanUse(BattleAction action) const;
+
 	int GetRiskVariation(int range) const;
 	int EstimateDirectAttackThreat(const BattleContext& context) const;
 
@@ -43,7 +48,7 @@ private:
 	float GetHpRatio(const CharacterSnapshot& character) const;
 
 	const char* ToString(BattleAction action) const;
-	void PrintDecisionLog(const std::vector<ActionScore>& scores, BattleAction selectedAction) const;
+	void PrintDecisionLog(const std::vector<ActionScore>& scores, const BattleContext& context, BattleAction selectedAction) const;
 	void PrintActionScores(const std::vector<ActionScore>& scores, BattleAction selectedAction) const;
 		
 	bool IsDirectAttackAction(BattleAction action) const;
@@ -55,4 +60,10 @@ private:
 	bool HasPlayerRecentlyUsed(BattleAction action);
 
 	void PrintMemoryDebug(const BattleContext& context) const;
- };
+
+	void UpdateRecentMemory(const AIMemoryUpdateData& data);
+	void UpdateAggregateMemory(const AIMemoryUpdateData& data);
+	void UpdateTacticalMemory(const AIMemoryUpdateData& data);
+
+	int GetActionBaseCoolDown(BattleAction action) const;
+};

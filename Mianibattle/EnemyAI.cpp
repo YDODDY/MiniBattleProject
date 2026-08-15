@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include "InteractionType.h"
 
 BattleAction EnemyAI::ChooseAction(const BattleContext& context)
 {
@@ -74,7 +75,7 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
 
     const BattleAction selectedAction = scores.front().action;
 
-    if (memory.totalPlayerTurns <= 1)
+    if (memory.totalPlayerActions <= 1)
     {
         const int bestScore = scores.front().score;
         const int openingThreshold = 30;
@@ -99,28 +100,35 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
 
         const BattleAction openingAction = openingCandidates[randomIndex].action;
 
-  //     PrintDecisionLog(scores, openingAction);
- //       PrintMemoryDebug(context);
-
+        PrintDecisionLog(scores, context, openingAction);
         return openingAction;
     }
 
-
-//    PrintDecisionLog(scores, selectedAction);
- //   PrintMemoryDebug(context);
-    
+    PrintDecisionLog(scores, context, selectedAction);
     return selectedAction;
 }
 
 void EnemyAI::ResetMemory()
 {
     memory = AIMemory{};
+
+    memory.roundsSincePlayerUsedAction.insert({BattleAction::Attack, -1});
+    memory.roundsSincePlayerUsedAction.insert({ BattleAction::PowerAttack, -1 });
+    memory.roundsSincePlayerUsedAction.insert({ BattleAction::PoisonAttack, -1 });
+    memory.roundsSincePlayerUsedAction.insert({ BattleAction::StunAttack, -1 });
+    memory.roundsSincePlayerUsedAction.insert({ BattleAction::Heal, -1 });
+    memory.roundsSincePlayerUsedAction.insert({ BattleAction::Guard, -1 });
+    memory.roundsSincePlayerUsedAction.insert({ BattleAction::AttackBuff, -1 });
+    memory.roundsSincePlayerUsedAction.insert({ BattleAction::DefenseBuff, -1 });
+    memory.roundsSincePlayerUsedAction.insert({ BattleAction::Counter, -1 });
+    memory.roundsSincePlayerUsedAction.insert({ BattleAction::Parry, -1 });
+
 }
 
 void EnemyAI::ObservePlayerAction(BattleAction action)
 {
     memory.lastPlayerAction = action;
-    ++memory.totalPlayerTurns;
+    ++memory.totalPlayerActions;
 
     memory.recentPlayerActions.push_back(action);
 
@@ -131,16 +139,7 @@ void EnemyAI::ObservePlayerAction(BattleAction action)
 
     if (IsDirectAttackAction(action))
     {
-        ++memory.totalDirectAttacks;
-    }
-
-    if (action == BattleAction::PowerAttack)
-    {
-        memory.turnsSincePowerAttack = 0;
-    }
-    else if (memory.turnsSincePowerAttack < 999)
-    {
-        ++memory.turnsSincePowerAttack;
+        ++memory.directAttackCount;
     }
 }
 
@@ -198,6 +197,7 @@ int EnemyAI::EvaluateGuard(const BattleContext& context) const
     // 기본 선호도 점수 (너무 안전추구형은 X)
     int score = 10;
 
+    
     const float selfHpRatio = GetHpRatio(context.self);
     // 체력이 낮아질 수록 방어적으로 바뀜
     if (selfHpRatio <= 0.5f) score += 25;
@@ -205,6 +205,17 @@ int EnemyAI::EvaluateGuard(const BattleContext& context) const
     
     // 거의 치명상이다 (PowerAttack 같은거 크리티컬 맞으면 죽을 것 같다) 싶으면 Heal 이 더 급하도록 
     if (selfHpRatio <= 0.2f) score -= 20;
+
+    if (PlayerLikelyCanUse(BattleAction::PowerAttack))
+    {
+        // PowerAttack은 Guard를 뚫으니까
+        score -= 15;
+    }
+
+    if (!PlayerLikelyCanUse(BattleAction::PowerAttack))
+    {
+        score += 10;
+    }
 
     return score;
 }
@@ -289,6 +300,7 @@ int EnemyAI::EvaluateDefenseBuff(const BattleContext& context) const
 
 int EnemyAI::EvaluateCounter(const BattleContext& context) const
 {
+    /*
     const int threat = EstimateDirectAttackThreat(context);
 
     // 기본 선호도 점수, Guard 보다는 높게 -> 체력이 너무 낮아 위험한 상황 아니면 조금 공격적인 방어 느낌을 선호
@@ -313,10 +325,22 @@ int EnemyAI::EvaluateCounter(const BattleContext& context) const
     score += GetRiskVariation(3);
 
     return std::max(0, score);
+    */
+
+    int score = 15;
+
+    const float directAttackThreat =
+        EstimateDirectAttackThreat(context);
+
+    score += static_cast<int>(
+        directAttackThreat * 40.0f);
+
+    return score;
 }
 
 int EnemyAI::EvaluateParry(const BattleContext& context) const
 {
+    /*
     const int threat = EstimateDirectAttackThreat(context);
     const float selfHpRatio = GetHpRatio(context.self);
     const float targetHpRatio = GetHpRatio(context.target);
@@ -347,6 +371,41 @@ int EnemyAI::EvaluateParry(const BattleContext& context) const
     score += GetRiskVariation(3);
 
     return std::max(0, score);
+    */
+
+    int score = 5;
+
+    const float directAttackThreat =
+        EstimateDirectAttackThreat(context);
+
+    score += static_cast<int>(
+        directAttackThreat * 45.0f);
+
+    return score;
+}
+
+int EnemyAI::GetRoundsSincePlayerUsed(BattleAction action) const
+{
+    auto it =
+        memory.roundsSincePlayerUsedAction.find(action);
+
+    if (it == memory.roundsSincePlayerUsedAction.end())
+        return -1;
+
+    return it->second;
+}
+
+bool EnemyAI::PlayerLikelyCanUse(BattleAction action) const
+{
+    const int roundsSinceUsed =
+        GetRoundsSincePlayerUsed(action);
+
+    if (roundsSinceUsed == -1)
+        return true;
+
+    const int cooldown = GetActionBaseCoolDown(action);
+
+    return roundsSinceUsed >= cooldown;
 }
 
 int EnemyAI::GetRiskVariation(int range) const
@@ -356,23 +415,25 @@ int EnemyAI::GetRiskVariation(int range) const
 
 int EnemyAI::EstimateDirectAttackThreat(const BattleContext& context) const
 {
-    int threat = 20;
+    // 아직 정보 없음
+    if (memory.totalPlayerActions == 0)
+        return 0.5f;
 
-    if (context.target.status.attackUp) threat += 25;
+    const float recentRatio = GetRecentDirectAttackRatio();
+    const float overallRatio = GetOverallDirectAttackRatio();
 
-    const float recentAttackRatio = GetRecentDirectAttackRatio();
-    const float overallAttackRatio = GetOverallDirectAttackRatio();
+    float threat =
+        recentRatio * 0.6f +
+        overallRatio * 0.4f;
 
-    // 최근 행동 선택 성향을 더 비중있게 두고 판단 
-    if (recentAttackRatio >= 0.8f) threat += 30;
-    else if (recentAttackRatio >= 0.6f) threat += 20;
-    else if (recentAttackRatio >= 0.4f) threat += 10;
+    const float confidence =
+        std::min(memory.totalPlayerActions / 5.0f, 1.0f);
 
-    // 전체적으로 어떤 느낌인지 틀 잡는 정도로 판정
-    if (overallAttackRatio >= 0.7f) threat += 10;
-    else if (overallAttackRatio <= 0.3f) threat -= 10;
+    threat =
+        0.5f * (1.0f - confidence)
+        + threat * confidence;
 
-    return std::clamp(threat, 0, 100);
+    return threat;
 }
 
 bool EnemyAI::HasActionControlStatus(const StatusSnapshot& status) const
@@ -429,57 +490,78 @@ const char* EnemyAI::ToString(BattleAction action) const
     }
 }
 
-void EnemyAI::PrintDecisionLog(const std::vector<ActionScore>& scores, BattleAction selectedAction) const
+void EnemyAI::PrintDecisionLog(const std::vector<ActionScore>& scores, const BattleContext& context, BattleAction selectedAction) const
 {
-    std::cout << "\n===== Enemy AI =====\n\n";
+    const float recentAttackRatio =
+        GetRecentDirectAttackRatio();
 
-    for (const ActionScore& actionScore : scores)
-    {
-        std::cout
-            << std::left
-            << std::setw(13)
-            << ToString(actionScore.action)
-            << ": "
-            << actionScore.score
-            << '\n';
-    }
+    const float overallAttackRatio =
+        GetOverallDirectAttackRatio();
+
+    const float directAttackThreat =
+        EstimateDirectAttackThreat(context);
 
     std::cout
-        << "\nChoose -> "
-        << ToString(selectedAction)
-        << "\n\n";
+        << "\n"
+        << "========================================\n"
+        << "              AI DECISION\n"
+        << "========================================\n";
 
+    std::cout
+        << std::left << std::setw(18)
+        << "Selected" << " : "
+        << ToString(selectedAction) << '\n';
+
+    std::cout
+        << std::left << std::setw(18)
+        << "Attack Threat" << " : "
+        << std::fixed << std::setprecision(2)
+        << directAttackThreat << '\n';
+
+    std::cout
+        << std::left << std::setw(18)
+        << "Recent Atk Ratio" << " : "
+        << recentAttackRatio << '\n';
+
+    std::cout
+        << std::left << std::setw(18)
+        << "Overall Atk Ratio" << " : "
+        << overallAttackRatio << '\n';
+
+    std::cout
+        << std::left << std::setw(18)
+        << "Last Player Action" << " : "
+        << ToString(memory.lastPlayerAction) << '\n';
+
+   // PrintActionScores(scores, selectedAction);
+   // PrintMemoryDebug(context);
+
+    std::cout
+        << "========================================\n";
 }
 
 void EnemyAI::PrintActionScores(const std::vector<ActionScore>& scores, BattleAction selectedAction) const
 {
-    std::cout << "\n===== Enemy AI =====\n\n";
+    std::cout << "\n---------- ACTION SCORES ----------\n";
 
     for (const ActionScore& actionScore : scores)
     {
         std::cout
             << std::left
-            << std::setw(15)
+            << std::setw(16)
             << ToString(actionScore.action)
-            << ": "
-            << actionScore.score
-            << '\n';
+            << " : "
+            << std::right
+            << std::setw(3)
+            << actionScore.score;
+
+        if (actionScore.action == selectedAction)
+        {
+            std::cout << "  < SELECTED";
+        }
+
+        std::cout << '\n';
     }
-
-    std::cout << "\n-------------------------\n";
-
-    if (!scores.empty())
-    {
-        std::cout
-            << "Highest Score : "
-            << scores.front().score
-            << '\n';
-    }
-
-    std::cout
-        << "Choose        : "
-        << ToString(selectedAction)
-        << "\n\n";
 }
 
 bool EnemyAI::IsDirectAttackAction(BattleAction action) const
@@ -501,27 +583,25 @@ float EnemyAI::GetRecentDirectAttackRatio() const
     if (memory.recentPlayerActions.empty())
         return 0.0f;
 
-    int directAttackCount = 0;
+    int count = 0;
 
     for (BattleAction action : memory.recentPlayerActions)
     {
         if (IsDirectAttackAction(action))
-        {
-            directAttackCount++;
-        }
+            ++count;
     }
 
-    return static_cast<float>(directAttackCount)
+    return static_cast<float>(count)
         / memory.recentPlayerActions.size();
 }
 
 float EnemyAI::GetOverallDirectAttackRatio() const
 {
-    if (memory.totalPlayerTurns == 0)
+    if (memory.totalPlayerActions == 0)
         return 0.0f;
 
-    return static_cast<float>(memory.totalDirectAttacks)
-        / memory.totalPlayerTurns;
+    return static_cast<float>(memory.directAttackCount)
+        / memory.totalPlayerActions;
 }
 
 bool EnemyAI::WasLastPlayerAction(BattleAction action) const
@@ -544,52 +624,250 @@ bool EnemyAI::HasPlayerRecentlyUsed(BattleAction action)
 
 void EnemyAI::PrintMemoryDebug(const BattleContext& context) const
 {
+    std::cout << "\n---------- AI MEMORY ----------\n";
+
+    const float recentAttackRatio =
+        GetRecentDirectAttackRatio();
+
+    const float overallAttackRatio =
+        GetOverallDirectAttackRatio();
 
     std::cout
-        << "\n========== AI MEMORY ==========\n";
+        << std::left << std::setw(18)
+        << "Player Actions" << " : "
+        << memory.totalPlayerActions << '\n';
 
     std::cout
-        << "Player Turns         : "
-        << memory.totalPlayerTurns
-        << '\n';
+        << std::left << std::setw(18)
+        << "Direct Attacks" << " : "
+        << memory.directAttackCount << '\n';
 
     std::cout
-        << "Last Player Action   : "
-        << ToString(memory.lastPlayerAction)
-        << '\n';
+        << std::left << std::setw(18)
+        << "Recent Atk Ratio" << " : "
+        << std::fixed << std::setprecision(2)
+        << recentAttackRatio << '\n';
 
     std::cout
-        << "Recent Attack Ratio  : "
-        << GetRecentDirectAttackRatio()
-        << '\n';
+        << std::left << std::setw(18)
+        << "Overall Atk Ratio" << " : "
+        << std::fixed << std::setprecision(2)
+        << overallAttackRatio << '\n';
 
     std::cout
-        << "Overall Attack Ratio : "
-        << GetOverallDirectAttackRatio()
-        << '\n';
+        << std::left << std::setw(18)
+        << "Last Action" << " : "
+        << ToString(memory.lastPlayerAction) << '\n';
 
-    std::cout
-        << "Turns Since PowerAtk : "
-        << memory.turnsSincePowerAttack
-        << '\n';
 
-    std::cout
-        << "Direct Attack Threat : "
-        << EstimateDirectAttackThreat(context)
-        << '\n';
+    // Recent Actions
+    std::cout << "\n[ Recent Actions ]\n";
 
-    std::cout
-        << "Recent Actions       : ";
-
-    for (BattleAction action :
-    memory.recentPlayerActions)
+    if (memory.recentPlayerActions.empty())
     {
-        std::cout
-            << ToString(action)
-            << " ";
+        std::cout << "(empty)\n";
+    }
+    else
+    {
+        bool first = true;
+
+        for (BattleAction action : memory.recentPlayerActions)
+        {
+            if (!first)
+            {
+                std::cout << " > ";
+            }
+
+            std::cout << ToString(action);
+            first = false;
+        }
+
+        std::cout << '\n';
     }
 
+
+    // Action History
+    std::cout << "\n[ Rounds Since Player Used Action ]\n";
+
+    for (const auto& [action, rounds]
+        : memory.roundsSincePlayerUsedAction)
+    {
+        std::cout
+            << std::left
+            << std::setw(16)
+            << ToString(action)
+            << " : ";
+
+        if (rounds == -1)
+        {
+            std::cout << "NEVER";
+        }
+        else
+        {
+            std::cout << rounds;
+        }
+
+        std::cout << '\n';
+    }
+
+
+    // Player Action Counts
+    std::cout << "\n[ Player Action Counts ]\n";
+
     std::cout
-        << "\n================================\n";
+        << std::left << std::setw(16)
+        << "PowerAttack" << " : "
+        << memory.playerPowerAttackCount << '\n';
+
+    std::cout
+        << std::left << std::setw(16)
+        << "Guard" << " : "
+        << memory.playerGuardCount << '\n';
+
+    std::cout
+        << std::left << std::setw(16)
+        << "Counter" << " : "
+        << memory.playerCounterCount << '\n';
+
+    std::cout
+        << std::left << std::setw(16)
+        << "Parry" << " : "
+        << memory.playerParryCount << '\n';
+
+
+    // Enemy Interaction Records
+    std::cout << "\n[ Enemy Interaction Record ]\n";
+
+    std::cout
+        << "Counter : "
+        << memory.enemyCounterSuccessCount
+        << " Success / "
+        << memory.enemyCounterFailedCount
+        << " Failed\n";
+
+    std::cout
+        << "Parry   : "
+        << memory.enemyParrySuccessCount
+        << " Success / "
+        << memory.enemyParryFailedCount
+        << " Failed\n";
+
+    std::cout
+        << "Guard Broken : "
+        << memory.enemyGuardBrokenCount
+        << '\n';
+}
+
+void EnemyAI::UpdateRecentMemory(const AIMemoryUpdateData& data)
+{
+    memory.lastPlayerAction = data.playerAction;
+
+    memory.recentPlayerActions.push_back(data.playerAction);
+
+    if (memory.recentPlayerActions.size() > 5)
+    {
+        memory.recentPlayerActions.pop_front();
+    }
+}
+
+void EnemyAI::UpdateAggregateMemory(const AIMemoryUpdateData & data)
+{
+    memory.totalPlayerActions++;
+
+    if (IsDirectAttackAction(data.playerAction))
+        memory.directAttackCount++;
+
+    switch (data.playerAction)
+    {
+    case BattleAction::PowerAttack:
+        memory.playerPowerAttackCount++;
+        break;
+
+    case BattleAction::Guard:
+        memory.playerGuardCount++;
+        break;
+
+    case BattleAction::Counter:
+        memory.playerCounterCount++;
+        break;
+
+    case BattleAction::Parry:
+        memory.playerParryCount++;
+        break;
+
+    default:
+        break;
+    }
+
+    for (auto& [action, rounds] :
+        memory.roundsSincePlayerUsedAction)
+    {
+        if (rounds >= 0)
+            ++rounds;
+    }
+
+    memory.roundsSincePlayerUsedAction[data.playerAction] = 0;
+}
+
+void EnemyAI::UpdateTacticalMemory(const AIMemoryUpdateData & data)
+{
+    for (const auto& it : data.interactions)
+    {
+        if (!it.enemyWasReactor)
+            continue;
+
+        switch (it.type)
+        {
+        case InteractionType::Guard:
+            if (it.result == InteractionResult::Failed)
+                memory.enemyGuardBrokenCount++;
+            break;
+
+        case InteractionType::Counter:
+            if (it.result == InteractionResult::Success)
+                memory.enemyCounterSuccessCount++;
+            else if (it.result == InteractionResult::Failed)
+                memory.enemyCounterFailedCount++;
+            break;
+
+        case InteractionType::Parry:
+            if (it.result == InteractionResult::Success)
+                memory.enemyParrySuccessCount++;
+            else if (it.result == InteractionResult::Failed)
+                memory.enemyParryFailedCount++;
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
+int EnemyAI::GetActionBaseCoolDown(BattleAction action) const
+{
+    switch (action)
+    {
+    case BattleAction::PowerAttack:
+        return 4;
+
+    case BattleAction::PoisonAttack:
+        return 5;
+
+    case BattleAction::StunAttack:
+        return 5;
+
+    case BattleAction::Heal:
+        return 4;
+
+    default:
+        return 0;
+    }
+}
+
+void EnemyAI::RememberRound(const AIMemoryUpdateData& data)
+{
+    UpdateRecentMemory(data);
+    UpdateAggregateMemory(data);
+    UpdateTacticalMemory(data);
 }
 

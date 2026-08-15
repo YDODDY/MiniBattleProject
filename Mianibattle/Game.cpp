@@ -83,13 +83,29 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 		if (!plan.hasInteraction)
 		{
 			if (ResolveBasicRound(context))
+			{
+				CheckBattleEnd(player, enemy);
 				break;
+			}
 		}
 		else
 		{
 			if (ResolveInteractionRound(context, plan))
+			{
+				CheckBattleEnd(player, enemy);
 				break;
+			}
 		}
+
+		BattleAction playerAction =
+			battleSystem.GetActionByActor(context, player);
+
+		BattleAction enemyAction =
+			battleSystem.GetActionByActor(context, enemy);
+
+		AIMemoryUpdateData data = battleSystem.MakeAIMemoryUpdateData
+		(playerAction, enemyAction, plan, actualEnemy);
+		actualEnemy.RememberRound(data);
 
 		++roundNum;
 	}
@@ -158,6 +174,12 @@ RoundContext Game::CreateRoundContext(const TurnOrder& order)
 	return context;
 }
 
+bool Game::IsAnyCharacterDead(const RoundContext& context)
+{
+	return context.first.actor->IsDead()
+		|| context.second.actor->IsDead();
+}
+
 bool Game::ResolveBasicRound(RoundContext& context)
 {
 	// first
@@ -174,12 +196,8 @@ bool Game::ResolveBasicRound(RoundContext& context)
 
 	battleSystem.EndActionPhase(*context.first.actor);
 
-	if (CheckBattleEnd(
-		*context.first.actor,
-		*context.second.actor))
-	{
+	if (IsAnyCharacterDead(context))
 		return true;
-	}
 
 	// second
 	ActionPhaseStartResult secondStart =
@@ -195,9 +213,8 @@ bool Game::ResolveBasicRound(RoundContext& context)
 
 	battleSystem.EndActionPhase(*context.second.actor);
 
-	return CheckBattleEnd(
-		*context.first.actor,
-		*context.second.actor);
+
+	return IsAnyCharacterDead(context);
 }
 
 bool Game::ResolveInteractionRound(RoundContext& context, RoundResolutionPlan& plan)
@@ -210,13 +227,31 @@ bool Game::ResolveInteractionRound(RoundContext& context, RoundResolutionPlan& p
 
 	battleSystem.ResolveInteraction(context, plan);
 
-	battleSystem.EndActionPhase(*context.first.actor);
+	if (firstStart.canAct &&
+		!battleSystem.WasActionResolvedByInteraction(
+			context.first, plan))
+	{
+		battleSystem.ExecuteAction(
+			context.first.action,
+			*context.first.actor,
+			*context.first.target);
+	}
 
+	if (secondStart.canAct &&
+		!battleSystem.WasActionResolvedByInteraction(
+			context.second, plan))
+	{
+		battleSystem.ExecuteAction(
+			context.second.action,
+			*context.second.actor,
+			*context.second.target);
+	}
+
+
+	battleSystem.EndActionPhase(*context.first.actor);
 	battleSystem.EndActionPhase(*context.second.actor);
 
-	return CheckBattleEnd(
-		*context.first.actor,
-		*context.second.actor);
+	return IsAnyCharacterDead(context);
 }
 
 

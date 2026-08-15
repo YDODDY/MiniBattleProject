@@ -96,6 +96,10 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 		ApplyStatusAction(actor, target, data);
 		break;
 	}
+
+	case BattleAction::Guard:
+		break;
+
 	default:
 		const AttackData data = MakeAttackData(actor, action);
 		Attack(actor, target, data);
@@ -391,6 +395,34 @@ bool BattleSystem::IsInteractionAction(BattleAction action) const
 		|| action == BattleAction::Parry;
 }
 
+bool BattleSystem::WasActionResolvedByInteraction(const RoundAction& roundAction, const RoundResolutionPlan& plan) const
+{
+	for (const InteractionPlan& interaction : plan.interactions)
+	{
+		// 성공한 Interaction은
+		// attacker + reactor 행동을 둘 다 처리한 것으로 봄
+		if (interaction.result == InteractionResult::Success)
+		{
+			if (interaction.attacker == &roundAction ||
+				interaction.reactor == &roundAction)
+			{
+				return true;
+			}
+		}
+		// 실패한 Counter / Parry는 reactor 행동 자체는
+		// 실패 처리된 것으로 봄
+		if (interaction.result == InteractionResult::Failed)
+		{
+			if (interaction.reactor == &roundAction)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 bool BattleSystem::ApplyReaction(Character& attacker, Character& target, const AttackData& attackData, bool isHit)
 {
 	const ReactionType reaction = target.GetPreparedReaction();
@@ -659,12 +691,24 @@ void BattleSystem::AnalyzeInteraction(RoundAction& reactor, RoundAction& opponen
 	case BattleAction::Guard:
 		if (IsDirectAttack(opponent.action))
 		{
-			plan.interactions.push_back({
+			if (opponent.action == BattleAction::PowerAttack)
+			{
+				plan.interactions.push_back({
+				InteractionType::Guard,
+				InteractionResult::Failed,
+				&opponent,
+				&reactor
+					});
+			}
+			else
+			{
+				plan.interactions.push_back({
 				InteractionType::Guard,
 				InteractionResult::Success,
 				&opponent,
 				&reactor
 				});
+			}
 		}
 		break;
 
@@ -735,7 +779,7 @@ void BattleSystem::ResolveCounterSuccess(InteractionPlan & interaction)
 		eventBus.Publish(MissedEvent{ attacker, counter, attackAction });
 	}
 
-	ResolveCounterInteraction(attacker, counter, attackData);
+	ResolveCounterInteraction(attacker, counter, attackData, isHit);
 }
 
 void BattleSystem::ResolveParrySuccess(InteractionPlan & interaction)
@@ -753,7 +797,7 @@ void BattleSystem::ResolveParrySuccess(InteractionPlan & interaction)
 		eventBus.Publish(MissedEvent{ attacker, counter, attackAction });
 	}
 
-	ResolveParryInteraction(counter, attacker, attackData);
+	ResolveParryInteraction(attacker, counter, attackData);
 }
 
 void BattleSystem::ResolveCounterFailed(InteractionPlan & interaction)
@@ -794,21 +838,25 @@ void BattleSystem::ResolveGuardInteraction(Character& attacker, Character& guard
 	}
 }
 
-void BattleSystem::ResolveCounterInteraction(Character& attacker, Character& counter, const AttackData& attackData)
+void BattleSystem::ResolveCounterInteraction(Character& attacker, Character& counter, const AttackData& attackData, bool isHit)
 {
-	int damage = CalculateRawDamage(attacker, attackData);
-	const bool isCritical = CheckIsCritical(attacker);
-	if (isCritical)
+	if (isHit)
 	{
-		damage = ApplyCriticalDamage(damage, attacker);
+		int damage = CalculateRawDamage(attacker, attackData);
+		const bool isCritical = CheckIsCritical(attacker);
+		if (isCritical)
+		{
+			damage = ApplyCriticalDamage(damage, attacker);
+		}
+
+		CalculateFinalDamage(damage, counter);
+		damage = static_cast<int>(damage * 0.5f);
+		const int appliedDamage = counter.ReceiveDamage(damage);
+
+		eventBus.Publish(DamagedEvent{ attacker, counter,
+			appliedDamage, DamageType::Direct, isCritical, attackData.action });
+
 	}
-
-	damage = CalculateFinalDamage(damage, attacker);
-	damage = static_cast<int>(damage * 0.5f);
-	const int appliedDamage = counter.ReceiveDamage(damage);
-
-	eventBus.Publish(DamagedEvent{ attacker, counter,
-		appliedDamage, DamageType::Direct, isCritical, attackData.action });
 
 	if (counter.IsDead())
 	{
@@ -836,6 +884,41 @@ void BattleSystem::ResolveParryInteraction(Character & attacker, Character & cou
 
 	const StatusApplyResult result = counter.ApplyStatus(effect);
 	eventBus.Publish(AppliedStatusEvent{ counter, effect, result });
+}
+
+AIMemoryUpdateData BattleSystem::MakeAIMemoryUpdateData(BattleAction playerAction, BattleAction enemyAction, const RoundResolutionPlan& plan, Character& enemy)
+{
+	AIMemoryUpdateData data;
+
+	data.playerAction = playerAction;
+	data.enemyAction = enemyAction;
+
+	for (const auto& interaction : plan.interactions)
+	{
+		InteractionMemoryData memoryInteraction;
+
+		memoryInteraction.type = interaction.interaction;
+		memoryInteraction.result = interaction.result;
+
+		memoryInteraction.enemyWasReactor =
+			interaction.reactor != nullptr &&
+			interaction.reactor->actor == &enemy;
+
+		data.interactions.push_back(memoryInteraction);
+	}
+
+	return data;
+}
+
+BattleAction BattleSystem::GetActionByActor(const RoundContext& context, const Character& actor)
+{
+	if (context.first.actor == &actor)
+		return context.first.action;
+
+	if (context.second.actor == &actor)
+		return context.second.action;
+
+	return BattleAction::None;
 }
 
 std::string BattleSystem::ToString(const BattleAction& action)

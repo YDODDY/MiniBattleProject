@@ -1,4 +1,7 @@
 #pragma once
+#include <vector>
+
+struct RoundAction;
 
 enum class InteractionType
 {

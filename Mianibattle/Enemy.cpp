@@ -9,3 +9,8 @@ void Enemy::RememberPlayerAction(BattleAction action)
 {
 	ai.ObservePlayerAction(action);
 }
+
+void Enemy::RememberRound(const AIMemoryUpdateData& data)
+{
+	ai.RememberRound(data);
+}

@@ -37,6 +37,7 @@ private:
 
 	RoundContext CreateRoundContext(const TurnOrder& order);
 
+	bool IsAnyCharacterDead(const RoundContext& context);
 	bool ResolveBasicRound(RoundContext& context);
 	bool ResolveInteractionRound(RoundContext& context, RoundResolutionPlan& plan);
 };

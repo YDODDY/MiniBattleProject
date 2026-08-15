@@ -9,6 +9,7 @@
 #include "RoundAction.h"
 #include <cstring>
 #include "InteractionType.h"
+#include "AIMemoryUpdateData.h"
 
 // 객체를 실제로 만들려면 (참조X) 크기, 맴버, 생성자 모두 알아야 하기 때문에 전방 선언 만으로는 모른다. 그래서 include 해줘야 함
 
@@ -59,6 +60,7 @@ public:
 
 	bool IsDirectAttack(BattleAction action) const;
 	bool IsInteractionAction(BattleAction action) const;
+	bool WasActionResolvedByInteraction(const RoundAction& roundAction, const RoundResolutionPlan& plan) const;
 
 	bool ApplyReaction(Character& attacker, Character& target, const AttackData& attackData, bool isHit);
 	void ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier, BattleAction sourceAction);
@@ -85,8 +87,12 @@ public:
 	void ResolveParryFailed(InteractionPlan& interaction);
 
 	void ResolveGuardInteraction(Character& attacker, Character& guarder, const AttackData& attackData);
-	void ResolveCounterInteraction(Character& attacker, Character& counter, const AttackData& attackData);
+	void ResolveCounterInteraction(Character& attacker, Character& counter, const AttackData& attackData, bool isHit);
 	void ResolveParryInteraction(Character& attacker, Character& counter, const AttackData& attackData);
+
+	AIMemoryUpdateData MakeAIMemoryUpdateData(BattleAction playerAction, BattleAction enemyAction, const RoundResolutionPlan& plan, Character& enemy);
+	
+	BattleAction GetActionByActor(const RoundContext& context, const Character& actor);
 
 private:
 

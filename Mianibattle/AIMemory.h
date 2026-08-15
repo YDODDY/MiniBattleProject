@@ -2,16 +2,32 @@
 
 #include "BattleAction.h"
 #include <deque>
+#include <unordered_map>
 
 
 struct AIMemory
 {
-	std::deque<BattleAction> recentPlayerActions;
+    // Recent
+    std::deque<BattleAction> recentPlayerActions;
+    BattleAction lastPlayerAction = BattleAction::None;
 
-	int totalPlayerTurns = 0;
-	int totalDirectAttacks = 0;
+    // Aggregate
+    int totalPlayerActions = 0;
+    int directAttackCount = 0;
 
-	BattleAction lastPlayerAction = BattleAction::None;
+    int playerPowerAttackCount = 0;
+    int playerGuardCount = 0;
+    int playerCounterCount = 0;
+    int playerParryCount = 0;
 
-	int turnsSincePowerAttack = 999;
+    // Tactical
+    std::unordered_map<BattleAction, int> roundsSincePlayerUsedAction;
+
+    int enemyGuardBrokenCount = 0;
+
+    int enemyCounterSuccessCount = 0;
+    int enemyCounterFailedCount = 0;
+
+    int enemyParrySuccessCount = 0;
+    int enemyParryFailedCount = 0;
 };

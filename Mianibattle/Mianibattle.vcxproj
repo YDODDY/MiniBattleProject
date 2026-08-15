@@ -157,6 +157,7 @@
     <ClInclude Include="ActionPhaseStartResult.h" />
     <ClInclude Include="ActionTarget.h" />
     <ClInclude Include="AIMemory.h" />
+    <ClInclude Include="AIMemoryUpdateData.h" />
     <ClInclude Include="AttackData.h" />
     <ClInclude Include="BattleAction.h" />
     <ClInclude Include="BattleActionUtils.h" />

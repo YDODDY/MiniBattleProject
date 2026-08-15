@@ -2,6 +2,8 @@
 
 #include "Character.h"
 #include "EnemyAI.h"
+#include "AIMemoryUpdateData.h"
+
 
 class Enemy : public Character
 {
@@ -15,6 +17,8 @@ public :
 
 	BattleAction ChooseAction(const BattleContext& context) override;
 	void RememberPlayerAction(BattleAction action);
+
+	void RememberRound(const AIMemoryUpdateData& data);
 
 private:
 
