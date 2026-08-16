@@ -16,7 +16,6 @@ public :
 	}
 
 	BattleAction ChooseAction(const BattleContext& context) override;
-	void RememberPlayerAction(BattleAction action);
 
 	void RememberRound(const AIMemoryUpdateData& data);
 

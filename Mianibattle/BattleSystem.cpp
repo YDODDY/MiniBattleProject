@@ -6,35 +6,6 @@
 #include <algorithm>
 #include "RoundAction.h"
 
-TurnStartResult BattleSystem::StartTurn(Character& character)
-{
-	const bool wasAlive = !character.IsDead();
-	TurnStartResult result = character.BeginTurn();
-
-	if (result.damage > 0)
-	{
-		eventBus.Publish(DamageOverTimeEvent{ character, 
-			result.damage, result.preventedBy });
-	}
-
-	if (wasAlive && character.IsDead())
-	{
-		eventBus.Publish(DeadEvent{ character });
-	}
-
-	if (!result.canAct)
-	{
-		eventBus.Publish(ActionPreventedEvent{character, result.preventedBy});
-	}
-
-	for (const StatusType expiredStatus : result.expiredStatuses)
-	{
-		eventBus.Publish(StatusExpiredEvent{character,expiredStatus});
-	}
-
-	return result;
-}
-
 void BattleSystem::Attack(Character& attacker, Character& target, const AttackData& attackData)
 {
 	if (!attacker.CanUseAction(attackData.action))
@@ -45,11 +16,6 @@ void BattleSystem::Attack(Character& attacker, Character& target, const AttackDa
 	attacker.StartCooldown(attackData.action, attackData.cooldownTurns);
 
 	const bool isHit = CheckItWasHit(attacker, target, attackData);
-
-	if (ApplyReaction(attacker, target, attackData, isHit))
-	{
-		return;
-	}
 
 	if (!isHit)
 	{
@@ -104,10 +70,7 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 		const AttackData data = MakeAttackData(actor, action);
 		Attack(actor, target, data);
 		break;
-	}
-
-	ResolveUnusedReaction(target, action);
-	
+	}	
 }
 
 void BattleSystem::ResolveInteraction(RoundContext& context, RoundResolutionPlan& plan)
@@ -157,6 +120,10 @@ void BattleSystem::ResolveFailedInteraction(InteractionPlan & interaction)
 {
 	switch (interaction.interaction)
 	{
+	case InteractionType::Guard:
+		ResolveGuardFailed(interaction);
+		break;
+
 	case InteractionType::Counter:
 		ResolveCounterFailed(interaction);
 		break;
@@ -166,43 +133,11 @@ void BattleSystem::ResolveFailedInteraction(InteractionPlan & interaction)
 		break;
 
 
-	case InteractionType::Guard:
 	case InteractionType::None:
 	default:
 		break;
 	}
 }
-
-void BattleSystem::HandleGuardedAttack(Character& attacker, Character& defender, const AttackData& attackData, bool isHit)
-{
-	eventBus.Publish(ReactionEvent{ attacker, defender, ReactionType::Guard });
-
-	if ((attackData.action == BattleAction::PowerAttack))
-	{
-		if (!isHit)
-		{
-			eventBus.Publish(MissedEvent{attacker, defender, attackData.action});
-			return;
-		}
-
-		int damage = CalculateRawDamage(attacker, attackData);
-		const bool isCritical = CheckIsCritical(attacker);
-
-		if (isCritical)
-		{
-			damage = ApplyCriticalDamage(damage, attacker);
-		}
-
-		damage = CalculateFinalDamage(damage, defender);
-
-		ApplyAttackResult(attacker, defender, damage, attackData, isCritical);
-		defender.ClearPreparedReaction();
-		return;
-	}
-
-	defender.ClearPreparedReaction();
-}
-
 
 bool BattleSystem::CheckItWasHit(const Character& attacker, const Character& target, const AttackData& data) const
 {
@@ -423,39 +358,6 @@ bool BattleSystem::WasActionResolvedByInteraction(const RoundAction& roundAction
 	return false;
 }
 
-bool BattleSystem::ApplyReaction(Character& attacker, Character& target, const AttackData& attackData, bool isHit)
-{
-	const ReactionType reaction = target.GetPreparedReaction();
-
-	if (reaction == ReactionType::None)
-	{
-		return false;
-	}
-
-	switch (reaction)
-	{
-	case ReactionType::Guard:
-		HandleGuardedAttack(attacker, target, attackData, isHit);
-		return true;
-
-	case ReactionType::Counter:
-		target.ClearPreparedReaction();
-		eventBus.Publish(ReactionEvent{ attacker, target, reaction });
-		HandleCounter(attacker,target,attackData,isHit);
-		return true;
-
-	case ReactionType::Parry:
-		target.ClearPreparedReaction();
-		eventBus.Publish(ReactionEvent{ attacker, target, reaction });
-		HandleParry(attacker,target,attackData,isHit);
-		return true;
-
-	case ReactionType::None:
-	default:
-		return false;
-	}
-}
-
 void BattleSystem::ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier, BattleAction sourceAction)
 {
 	int damage = static_cast<int>(counterAttacker.GetAttack() * damageMultiplier);
@@ -469,96 +371,6 @@ void BattleSystem::ExecuteCounterAttack(Character& counterAttacker, Character& t
 	{
 		eventBus.Publish(DeadEvent{target});
 	}
-
-}
-
-void BattleSystem::HandleCounter(Character& attacker, Character& defender, const AttackData& attackData, bool isHit)
-{
-	if (isHit)
-	{
-		int damage = CalculateRawDamage(attacker, attackData);
-
-		const bool isCritical = CheckIsCritical(attacker);
-		if (isCritical)
-		{
-			damage = ApplyCriticalDamage(damage, attacker);
-		}
-
-		damage = CalculateFinalDamage(damage, defender);
-		damage = static_cast<int>(damage * 0.5f);
-		const int appliedDamage = defender.ReceiveDamage(damage);
-
-		eventBus.Publish(DamagedEvent{attacker, defender, 
-			appliedDamage, DamageType::Direct, isCritical, attackData.action});
-
-		if (defender.IsDead())
-		{
-			eventBus.Publish(DeadEvent { defender});
-			return;
-		}
-
-		ApplyAttackStatus(attacker, defender, attackData);
-	}
-	else
-	{
-		eventBus.Publish(MissedEvent{ attacker,defender,attackData.action });
-	}
-
-
-	if (!defender.IsDead())
-	{
-		ExecuteCounterAttack( defender,attacker, 0.8f, BattleAction::Counter);
-	}
-}
-
-void BattleSystem::HandleParry(Character& attacker, Character& defender, const AttackData& attackData, bool isHit)
-{
-	if (!isHit)
-	{
-		eventBus.Publish( MissedEvent{ attacker, defender, attackData.action });
-	}
-
-	ExecuteCounterAttack( defender, attacker, 1.2f, BattleAction::Parry);
-
-	StatusEffect effect;
-	effect.type = StatusType::AttackUp;
-	effect.remainingTurns = 2;
-	effect.value = 0.4f;
-
-	const StatusApplyResult result = defender.ApplyStatus(effect);
-
-	eventBus.Publish(AppliedStatusEvent{ defender, effect, result });
-}
-
-void BattleSystem::ResolveUnusedReaction(Character& waitingCharacter, BattleAction performedAction)
-{
-	if (!waitingCharacter.HasPreparedReaction()) return;
-	if (IsDirectAttack(performedAction)) return;
-	
-	const ReactionType failedReaction = waitingCharacter.GetPreparedReaction();
-	waitingCharacter.ClearPreparedReaction();
-	StatusType appliedPenalty = StatusType::None;
-
-	switch (failedReaction)
-	{		
-	case ReactionType::Counter:
-		appliedPenalty = StatusType::DefenseDown;
-		ApplyStatusEffect(waitingCharacter,appliedPenalty,3,0.5f);
-		break;
-
-	case ReactionType::Parry:
-		appliedPenalty = StatusType::DirectAttackLocked;
-		ApplyStatusEffect(waitingCharacter,appliedPenalty,2,0.0f);
-		break;
-
-	case ReactionType::Guard:
-	case ReactionType::None:
-	default:
-		break;
-	}
-
-	eventBus.Publish(ReactionFailedEvent
-		{waitingCharacter,failedReaction,appliedPenalty	});
 
 }
 
@@ -800,6 +612,33 @@ void BattleSystem::ResolveParrySuccess(InteractionPlan & interaction)
 	ResolveParryInteraction(attacker, counter, attackData);
 }
 
+void BattleSystem::ResolveGuardFailed(InteractionPlan& interaction)
+{
+	Character& attacker = *interaction.attacker->actor;
+	Character& guarder = *interaction.reactor->actor;
+	const BattleAction attackAction = interaction.attacker->action;
+
+	if (attackAction == BattleAction::PowerAttack)
+	{
+		eventBus.Publish(GuardFailedEvent{attacker, guarder});
+
+		AttackData attackData = MakeAttackData(attacker, attackAction);
+		int damage = CalculateRawDamage(attacker, attackData);
+		const bool isCritical = CheckIsCritical(attacker);
+
+		if (isCritical)
+		{
+			damage = ApplyCriticalDamage(damage, attacker);
+		}
+
+		damage = CalculateFinalDamage(damage, guarder);
+
+		ApplyAttackResult(attacker, guarder, damage, attackData, isCritical);
+
+		return;
+	}
+}
+
 void BattleSystem::ResolveCounterFailed(InteractionPlan & interaction)
 {
 	Character& counter = *interaction.reactor->actor;
@@ -814,23 +653,7 @@ void BattleSystem::ResolveParryFailed(InteractionPlan & interaction)
 
 void BattleSystem::ResolveGuardInteraction(Character& attacker, Character& guarder, const AttackData& attackData)
 {
-	if (attackData.action == BattleAction::PowerAttack)
-	{
-		int damage = CalculateRawDamage(attacker, attackData);
-		const bool isCritical = CheckIsCritical(attacker);
-
-		if (isCritical)
-		{
-			damage = ApplyCriticalDamage(damage, attacker);
-		}
-
-		damage = CalculateFinalDamage(damage, guarder);
-
-		ApplyAttackResult(attacker, guarder, damage, attackData, isCritical);
-		return;
-	}
-
-	eventBus.Publish(ReactionEvent{ attacker, guarder, ReactionType::Guard });
+	eventBus.Publish(InteractEvent{ attacker, guarder, InteractType::Guard });
 
 	if (attackData.appliedStatus != StatusType::None)
 	{

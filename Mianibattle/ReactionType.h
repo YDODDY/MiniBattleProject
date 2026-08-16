@@ -1,6 +1,6 @@
 #pragma once
 
-enum class ReactionType
+enum class InteractType
 {
 	None,
 	Guard,
@@ -8,4 +8,4 @@ enum class ReactionType
 	Parry
 };
 
-const char* ToString(ReactionType reaction);
+const char* ToString(InteractType reaction);

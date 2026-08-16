@@ -17,7 +17,8 @@ private:
 	void OnAppliedStatus(const AppliedStatusEvent& event);
 	void OnPreventedAction(const ActionPreventedEvent& event);
 	void OnDamageOverTime(const DamageOverTimeEvent& event);
-	void OnReactedAttack(const ReactionEvent& event);
-	void OnReactionFailed(const ReactionFailedEvent& event);
+	void OnInteractionSuccess(const InteractEvent& event);
+	void OnInteractionFailed(const InteractFailedEvent& event);
 	void OnStatusExpired(const StatusExpiredEvent& event);
+	void OnGuardFailed(const GuardFailedEvent& event);
 };

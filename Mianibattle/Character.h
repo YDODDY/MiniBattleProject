@@ -88,11 +88,6 @@ public :
 
 	const Status& GetStatus() const;
 
-	void PrepareReaction(ReactionType type);
-	ReactionType GetPreparedReaction() const;
-	void ClearPreparedReaction();
-	bool HasPreparedReaction() const;
-
 	ActionPhaseEndResult ProcessActionPhaseEnd();
 	ActionPhaseStartResult ProcessActionPhaseStart();
 
@@ -108,5 +103,5 @@ private:
 
 	CharacterStats selfStats;
 
-	ReactionType preparedReaction = ReactionType::None;
+	InteractType preparedReaction = InteractType::None;
 };

@@ -53,16 +53,16 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 		}
 	);
 
-	eventBus.Subscribe<ReactionEvent>(
-		[this](const ReactionEvent& event)
+	eventBus.Subscribe<InteractEvent>(
+		[this](const InteractEvent& event)
 		{
-			OnReactedAttack(event);
+			OnInteractionSuccess(event);
 		});
 
-	eventBus.Subscribe<ReactionFailedEvent>(
-		[this](const ReactionFailedEvent& event)
+	eventBus.Subscribe<InteractFailedEvent>(
+		[this](const InteractFailedEvent& event)
 		{
-			OnReactionFailed(event);
+			OnInteractionFailed(event);
 		}
 	);
 
@@ -70,6 +70,13 @@ ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)
 		[this](const StatusExpiredEvent& event)
 		{
 			OnStatusExpired(event);
+		}
+	);
+
+	eventBus.Subscribe<GuardFailedEvent>(
+		[this](const GuardFailedEvent& event)
+		{
+			OnGuardFailed(event);
 		}
 	);
 }
@@ -80,10 +87,6 @@ void ConsoleLogSystem::OnDamaged(const DamagedEvent& event)
 		BattleAction::PowerAttack)
 	{
 		std::cout << "[PowerAttack!]\n";
-
-		if (event.target.GetPreparedReaction() == ReactionType::Guard)
-			std::cout << event.target.GetName()
-			<< "'s Guarding is failed!\n";
 	}
 
 	if (event.isCritical)
@@ -197,11 +200,11 @@ void ConsoleLogSystem::OnDamageOverTime(const DamageOverTimeEvent& event)
 		<< '\n';
 }
 
-void ConsoleLogSystem::OnReactedAttack(const ReactionEvent& event)
+void ConsoleLogSystem::OnInteractionSuccess(const InteractEvent& event)
 {
-	switch (event.reaction)
+	switch (event.interaction)
 	{
-	case ReactionType::Guard:
+	case InteractType::Guard:
 		std::cout
 			<< event.reactor.GetName()
 			<< " guarded "
@@ -209,7 +212,7 @@ void ConsoleLogSystem::OnReactedAttack(const ReactionEvent& event)
 			<< "'s attack!\n";
 		break;
 
-	case ReactionType::Counter:
+	case InteractType::Counter:
 		std::cout
 			<< event.reactor.GetName()
 			<< " countered "
@@ -217,7 +220,7 @@ void ConsoleLogSystem::OnReactedAttack(const ReactionEvent& event)
 			<< "'s attack!\n";
 		break;
 
-	case ReactionType::Parry:
+	case InteractType::Parry:
 		std::cout
 			<< event.reactor.GetName()
 			<< " parried "
@@ -225,18 +228,18 @@ void ConsoleLogSystem::OnReactedAttack(const ReactionEvent& event)
 			<< "'s attack!\n";
 		break;
 
-	case ReactionType::None:
+	case InteractType::None:
 	default:
 		break;
 	}
 }
 
-void ConsoleLogSystem::OnReactionFailed(const ReactionFailedEvent& event)
+void ConsoleLogSystem::OnInteractionFailed(const InteractFailedEvent& event)
 {
 	std::cout
 		<< event.character.GetName()
 		<< "'s "
-		<< ToString(event.reaction)
+		<< ToString(event.interaction)
 		<< " failed!\n";
 }
 
@@ -270,4 +273,9 @@ void ConsoleLogSystem::OnStatusExpired(const StatusExpiredEvent& event)
 			<< ".\n";
 		break;
 	}
+}
+
+void ConsoleLogSystem::OnGuardFailed(const GuardFailedEvent& event)
+{
+	std::cout << event.guarder.GetName() << "'s Guard is Failed !\n";
 }

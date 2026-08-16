@@ -1,19 +1,19 @@
 #include "ReactionType.h"
 
-const char* ToString(ReactionType reaction)
+const char* ToString(InteractType reaction)
 {
     switch (reaction)
     {
-    case ReactionType::Guard:
+    case InteractType::Guard:
         return "Guard";
 
-    case ReactionType::Counter:
+    case InteractType::Counter:
         return "Counter";
 
-    case ReactionType::Parry:
+    case InteractType::Parry:
         return "Parry";
 
-    case ReactionType::None:
+    case InteractType::None:
     default:
         return "None";
     }

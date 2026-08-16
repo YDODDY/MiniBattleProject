@@ -238,26 +238,6 @@ const Status& Character::GetStatus() const
 	return status;
 }
 
-void Character::PrepareReaction(ReactionType type)
-{
-	preparedReaction = type;
-}
-
-ReactionType Character::GetPreparedReaction() const
-{
-	return preparedReaction;
-}
-
-void Character::ClearPreparedReaction()
-{
-	preparedReaction = ReactionType::None;
-}
-
-bool Character::HasPreparedReaction() const
-{
-	return preparedReaction != ReactionType::None;
-}
-
 ActionPhaseEndResult Character::ProcessActionPhaseEnd()
 {
 	ActionPhaseEndResult result;

@@ -27,10 +27,7 @@ public:
 
 	}
 
-	TurnStartResult StartTurn(Character& character);
-
 	void Attack(Character& attacker, Character& target, const AttackData& attackData);
-
 	void Heal(Character& character, int healAmount);
 
 	void ExecuteAction(BattleAction action, Character& actor, Character& target);
@@ -38,14 +35,10 @@ public:
 	void ResolveSuccessfullInteraction(InteractionPlan& interaction);
 	void ResolveFailedInteraction(InteractionPlan& interaction);
 
-	void HandleGuardedAttack(Character& attacker, Character& actor, const AttackData& attackData, bool isHit);
-
 	bool CheckItWasHit(const Character& attacker, const Character& target, const AttackData& data) const;
-
 	bool CheckIsCritical(const Character& attacker) const;
 
 	AttackData MakeAttackData(Character& character, BattleAction action);
-
 	void ApplyAttackResult(Character& attacker, Character& target, int damage, const AttackData& attackData, bool isCritical);
 
 	BattleAction RequestAction(Character& actor, Character& target);
@@ -62,12 +55,7 @@ public:
 	bool IsInteractionAction(BattleAction action) const;
 	bool WasActionResolvedByInteraction(const RoundAction& roundAction, const RoundResolutionPlan& plan) const;
 
-	bool ApplyReaction(Character& attacker, Character& target, const AttackData& attackData, bool isHit);
 	void ExecuteCounterAttack(Character& counterAttacker, Character& target, float damageMultiplier, BattleAction sourceAction);
-	void HandleCounter(Character& attacker, Character& defender, const AttackData& attackData, bool isHit);
-	void HandleParry(Character& attacker, Character& defender, const AttackData& attackData, bool isHit);
-
-	void ResolveUnusedReaction(Character& waitingCharacter, BattleAction performedAction);
 
 	void ApplyAttackStatus(Character& attacker, Character& target, const AttackData& attackData);
 
@@ -83,6 +71,7 @@ public:
 	void ResolveCounterSuccess(InteractionPlan& interaction);
 	void ResolveParrySuccess(InteractionPlan& interaction);
 	
+	void ResolveGuardFailed(InteractionPlan& interaction);
 	void ResolveCounterFailed(InteractionPlan& interaction);
 	void ResolveParryFailed(InteractionPlan& interaction);
 

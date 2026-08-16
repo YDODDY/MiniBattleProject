@@ -55,19 +55,19 @@ struct DamageOverTimeEvent
 	StatusType statusType;
 };
 
-struct ReactionEvent
+struct InteractEvent
 {
 	Character& attacker;
 	Character& reactor;
 
-	ReactionType reaction;
+	InteractType interaction;
 };
 
-struct ReactionFailedEvent
+struct InteractFailedEvent
 {
 	Character& character;
 
-	ReactionType reaction;
+	InteractType interaction;
 	StatusType statusType;
 };
 
@@ -75,4 +75,10 @@ struct StatusExpiredEvent
 {
 	Character& character;
 	StatusType statusType;
+};
+
+struct GuardFailedEvent
+{
+	Character& attacker;
+	Character& guarder;
 };

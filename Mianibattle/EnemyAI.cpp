@@ -418,20 +418,16 @@ int EnemyAI::EstimateDirectAttackThreat(const BattleContext& context) const
     // 아직 정보 없음
     if (memory.totalPlayerActions == 0)
         return 0.5f;
-
+    
     const float recentRatio = GetRecentDirectAttackRatio();
-    const float overallRatio = GetOverallDirectAttackRatio();
+    const float overallRatio = GetOverallDirectAttackRatio(); 
 
-    float threat =
-        recentRatio * 0.6f +
-        overallRatio * 0.4f;
+    float threat = recentRatio * 0.6f + overallRatio * 0.4f;
 
     const float confidence =
         std::min(memory.totalPlayerActions / 5.0f, 1.0f);
 
-    threat =
-        0.5f * (1.0f - confidence)
-        + threat * confidence;
+    threat = 0.5f * (1.0f - confidence) + threat * confidence;
 
     return threat;
 }
