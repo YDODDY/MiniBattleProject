@@ -1,5 +1,5 @@
 #include "ConsoleLogSystem.h"
-#include "ReactionType.h"
+#include "InteractType.h"
 #include <iostream>
 
 ConsoleLogSystem::ConsoleLogSystem(EventBus& eventBus)

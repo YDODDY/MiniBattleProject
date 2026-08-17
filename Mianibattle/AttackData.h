@@ -1,5 +1,4 @@
 #pragma once
-#include "DamageType.h"
 #include "Status.h"		
 
 struct AttackData

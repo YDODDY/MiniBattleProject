@@ -13,7 +13,7 @@ struct AIMemory
 
     // Aggregate
     int totalPlayerActions = 0;
-    int directAttackCount = 0;
+    int playerDirectAttackCount = 0;
 
     int playerPowerAttackCount = 0;
     int playerGuardCount = 0;

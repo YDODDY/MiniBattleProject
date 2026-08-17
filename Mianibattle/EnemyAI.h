@@ -17,10 +17,12 @@ struct ActionScore
 class EnemyAI
 {
 public:
+
+	EnemyAI();
+
 	BattleAction ChooseAction(const BattleContext& context);
 
 	void ResetMemory();
-	void ObservePlayerAction(BattleAction action);
 	void RememberRound(const AIMemoryUpdateData& data);
 
 private:
@@ -41,7 +43,6 @@ private:
 	int GetRoundsSincePlayerUsed(BattleAction action) const;
 	bool PlayerLikelyCanUse(BattleAction action) const;
 
-	int GetRiskVariation(int range) const;
 	int EstimateDirectAttackThreat(const BattleContext& context) const;
 
 	bool HasActionControlStatus(const StatusSnapshot& status) const;

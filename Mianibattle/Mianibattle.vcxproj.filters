@@ -107,7 +107,7 @@
     <ClInclude Include="StatusActionData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ReactionType.h">
+    <ClInclude Include="InteractType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BattleActionUtils.h">

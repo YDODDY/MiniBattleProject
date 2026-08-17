@@ -5,7 +5,7 @@
 #include "Status.h"
 #include "TurnStartResult.h"
 #include "BattleContext.h"
-#include "ReactionType.h"
+#include "InteractType.h"
 #include "ActionPhaseEndResult.h"
 #include "ActionPhaseStartResult.h"
 

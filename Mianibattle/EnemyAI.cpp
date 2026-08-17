@@ -5,6 +5,11 @@
 #include <algorithm>
 #include "InteractionType.h"
 
+EnemyAI::EnemyAI()
+{
+    ResetMemory();
+}
+
 BattleAction EnemyAI::ChooseAction(const BattleContext& context)
 {
     std::vector<ActionScore> scores;
@@ -123,24 +128,6 @@ void EnemyAI::ResetMemory()
     memory.roundsSincePlayerUsedAction.insert({ BattleAction::Counter, -1 });
     memory.roundsSincePlayerUsedAction.insert({ BattleAction::Parry, -1 });
 
-}
-
-void EnemyAI::ObservePlayerAction(BattleAction action)
-{
-    memory.lastPlayerAction = action;
-    ++memory.totalPlayerActions;
-
-    memory.recentPlayerActions.push_back(action);
-
-    if (memory.recentPlayerActions.size() > 5)
-    {
-        memory.recentPlayerActions.pop_front();
-    }
-
-    if (IsDirectAttackAction(action))
-    {
-        ++memory.directAttackCount;
-    }
 }
 
 int EnemyAI::EvaluateAttack(const BattleContext& context) const
@@ -300,32 +287,6 @@ int EnemyAI::EvaluateDefenseBuff(const BattleContext& context) const
 
 int EnemyAI::EvaluateCounter(const BattleContext& context) const
 {
-    /*
-    const int threat = EstimateDirectAttackThreat(context);
-
-    // 기본 선호도 점수, Guard 보다는 높게 -> 체력이 너무 낮아 위험한 상황 아니면 조금 공격적인 방어 느낌을 선호
-    // 근데 체력이 너무 낮아지면 쿨타임도 더 짧고 더 안전형인 Gaurd 선호하게 되는 느낌
-    int score = 15;
-
-    const float selfHpRatio = GetHpRatio(context.self);
-
-    // 체력이 깎이고 있긴 한데 아직 버틸만 한 것 같으면 (한방에는 안죽을 것 같은 체력상황 즈음?) 방어적인 행동을 고르되, 아직 상대에게 데미지를 입히려는 성향으로
-    if (selfHpRatio <= 0.20f) score -= 40;
-    else if (selfHpRatio <= 0.40f) score -= 15;
-    else if (selfHpRatio >= 0.60f) score += 10;
-
-    // 플레이어 행동 성향이 공격 위주 같으면 Counter 도 자주 섞어 쓰기 (체력이 엄청 낮은거 아닌 이상) 
-    if (threat >= 40) score += 25;
-    if (threat >= 60) score += 15;
-
-    // 플레이어가 계속 공격만 한다? 일단 Parry 도 좀 섞어주면서, 조금 더 위협적인 역공격형 방어를 써도 되겠다는 판정 들어갈 수 있음 
-    if (threat >= 75)
-        score -= 15;
-
-    score += GetRiskVariation(3);
-
-    return std::max(0, score);
-    */
 
     int score = 15;
 
@@ -340,39 +301,6 @@ int EnemyAI::EvaluateCounter(const BattleContext& context) const
 
 int EnemyAI::EvaluateParry(const BattleContext& context) const
 {
-    /*
-    const int threat = EstimateDirectAttackThreat(context);
-    const float selfHpRatio = GetHpRatio(context.self);
-    const float targetHpRatio = GetHpRatio(context.target);
-
-    // 기본 선호도 점수. 실패 패널티가 현재 제일 크기 때문에 guard/counter 보다는 좀 더 고심해서 쓰는 느낌
-    int score = 5;
-
-    // 상대가 슬슬 공격적으로 압박할 가능성이 있어지는 체력상태면, 그걸 역이용해서 Parry 로 조금 판 뒤집기 해보려는 느낌
-    if (selfHpRatio <= 0.4) score += 20;
-
-    // 낮은 체력에서는 피해 무효의 가치가 매우 큼 (Guard 할지 Parry 할지가 여기서 판가름 날 듯, Guard 해보고 Guard 못하면 Parry 도 하고 하는 느낌으로. ) 
-    // 꽤 위험한 상황부터는 Counter 도 데미지+상태이상 받는게 부담스러워 질 수 있기 때문에 Parry 를 더 선호하게 되는 느낌
-    if (selfHpRatio <= 0.3) score += 30;
-
-    // 근데 진짜 한방 제대로 맞으면 바로 죽을 정도로 너무 체력이 낮다? -> 일단 heal 도 해야할거고 (1순위일듯), 도박을 걸 여유는 아님 
-    if (selfHpRatio <= 0.15f) score -= 15;
-
-    // 상대도 낮은 HP에서 피니시를 노리고 직접 공격할 가능성이 있다면 역이용 가능
-    if (targetHpRatio <= 0.25f) score += 10;
-
-    // 상대가 DefenseUp 상황이면 상대가 현재 조금 불리한 상황일 수도 있음, 방어형 행동 보다는 압박하는게 더 유리할 수 있기에 parry 후순위
-    if (context.target.status.defenseUp) score -= 15;
-
-    // 상대가 꽤 공격적이면 슬슬 선호도 올라감 
-    if (threat >= 60) score += 25;
-    if (threat >= 75) score += 45;
-
-    score += GetRiskVariation(3);
-
-    return std::max(0, score);
-    */
-
     int score = 5;
 
     const float directAttackThreat =
@@ -406,11 +334,6 @@ bool EnemyAI::PlayerLikelyCanUse(BattleAction action) const
     const int cooldown = GetActionBaseCoolDown(action);
 
     return roundsSinceUsed >= cooldown;
-}
-
-int EnemyAI::GetRiskVariation(int range) const
-{
-    return rand() % (range * 2 + 1) - range;
 }
 
 int EnemyAI::EstimateDirectAttackThreat(const BattleContext& context) const
@@ -596,7 +519,7 @@ float EnemyAI::GetOverallDirectAttackRatio() const
     if (memory.totalPlayerActions == 0)
         return 0.0f;
 
-    return static_cast<float>(memory.directAttackCount)
+    return static_cast<float>(memory.playerDirectAttackCount)
         / memory.totalPlayerActions;
 }
 
@@ -636,7 +559,7 @@ void EnemyAI::PrintMemoryDebug(const BattleContext& context) const
     std::cout
         << std::left << std::setw(18)
         << "Direct Attacks" << " : "
-        << memory.directAttackCount << '\n';
+        << memory.playerDirectAttackCount << '\n';
 
     std::cout
         << std::left << std::setw(18)
@@ -771,7 +694,7 @@ void EnemyAI::UpdateAggregateMemory(const AIMemoryUpdateData & data)
     memory.totalPlayerActions++;
 
     if (IsDirectAttackAction(data.playerAction))
-        memory.directAttackCount++;
+        memory.playerDirectAttackCount++;
 
     switch (data.playerAction)
     {

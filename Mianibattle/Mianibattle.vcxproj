@@ -174,7 +174,7 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="InteractionType.h" />
     <ClInclude Include="Player.h" />
-    <ClInclude Include="ReactionType.h" />
+    <ClInclude Include="InteractType.h" />
     <ClInclude Include="RoundAction.h" />
     <ClInclude Include="Status.h" />
     <ClInclude Include="StatusActionData.h" />

@@ -1,4 +1,4 @@
-#include "ReactionType.h"
+#include "InteractType.h"
 
 const char* ToString(InteractType reaction)
 {
