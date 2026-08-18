@@ -4,6 +4,7 @@
 #include "Enemy.h"
 #include <iostream>
 #include "BattleAction.h"
+#include "ConsoleLogSystem.h"
 
 Game::Game() 
 	: battleSystem(eventBus), consoleLogSystem(eventBus)
@@ -67,8 +68,12 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 
 	while (!player.IsDead() && !enemy.IsDead())
 	{
+		consoleLogSystem.PrintRoundHeader(roundNum);
+
 		RoundContext context = CreateRoundContext(order);
 		context.roundNumber = roundNum;
+
+		consoleLogSystem.PrintRoundStatus(player, enemy);
 
 		context.first.action = battleSystem.RequestAction
 		(*context.first.actor, *context.first.target);
@@ -102,6 +107,18 @@ void Game::RunBattleLoop(Character& player, Character& enemy)
 
 		BattleAction enemyAction =
 			battleSystem.GetActionByActor(context, enemy);
+
+
+		consoleLogSystem.PrintRoundEndStatus(player, enemy);
+
+		consoleLogSystem.PrintHpBar(player);
+		consoleLogSystem.PrintStatusSummary(player);
+
+		std::cout << '\n';
+
+		consoleLogSystem.PrintHpBar(enemy);
+		consoleLogSystem.PrintStatusSummary(enemy);
+
 
 		AIMemoryUpdateData data = battleSystem.MakeAIMemoryUpdateData
 		(playerAction, enemyAction, plan, actualEnemy);
@@ -224,6 +241,8 @@ bool Game::ResolveInteractionRound(RoundContext& context, RoundResolutionPlan& p
 
 	ActionPhaseStartResult secondStart =
 		battleSystem.StartActionPhase(*context.second.actor);
+
+	battleSystem.ValidateInteractionsForActionPhase(context, plan, firstStart, secondStart);
 
 	battleSystem.ResolveInteraction(context, plan);
 

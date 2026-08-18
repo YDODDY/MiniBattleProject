@@ -43,7 +43,7 @@ private:
 	int GetRoundsSincePlayerUsed(BattleAction action) const;
 	bool PlayerLikelyCanUse(BattleAction action) const;
 
-	int EstimateDirectAttackThreat(const BattleContext& context) const;
+	float EstimateDirectAttackThreat(const BattleContext& context) const;
 
 	bool HasActionControlStatus(const StatusSnapshot& status) const;
 	float GetHpRatio(const CharacterSnapshot& character) const;

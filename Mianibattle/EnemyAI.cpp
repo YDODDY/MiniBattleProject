@@ -105,11 +105,11 @@ BattleAction EnemyAI::ChooseAction(const BattleContext& context)
 
         const BattleAction openingAction = openingCandidates[randomIndex].action;
 
-        PrintDecisionLog(scores, context, openingAction);
+        //PrintDecisionLog(scores, context, openingAction);
         return openingAction;
     }
 
-    PrintDecisionLog(scores, context, selectedAction);
+    //PrintDecisionLog(scores, context, selectedAction);
     return selectedAction;
 }
 
@@ -336,7 +336,7 @@ bool EnemyAI::PlayerLikelyCanUse(BattleAction action) const
     return roundsSinceUsed >= cooldown;
 }
 
-int EnemyAI::EstimateDirectAttackThreat(const BattleContext& context) const
+float EnemyAI::EstimateDirectAttackThreat(const BattleContext& context) const
 {
     // 아직 정보 없음
     if (memory.totalPlayerActions == 0)
@@ -452,8 +452,8 @@ void EnemyAI::PrintDecisionLog(const std::vector<ActionScore>& scores, const Bat
         << "Last Player Action" << " : "
         << ToString(memory.lastPlayerAction) << '\n';
 
-   // PrintActionScores(scores, selectedAction);
-   // PrintMemoryDebug(context);
+    //PrintActionScores(scores, selectedAction);
+    //PrintMemoryDebug(context);
 
     std::cout
         << "========================================\n";

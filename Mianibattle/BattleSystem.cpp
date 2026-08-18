@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include "RoundAction.h"
+#include <iomanip>
 
 void BattleSystem::Attack(Character& attacker, Character& target, const AttackData& attackData)
 {
@@ -63,9 +64,6 @@ void BattleSystem::ExecuteAction(BattleAction action, Character& actor, Characte
 		break;
 	}
 
-	case BattleAction::Guard:
-		break;
-
 	default:
 		const AttackData data = MakeAttackData(actor, action);
 		Attack(actor, target, data);
@@ -77,12 +75,18 @@ void BattleSystem::ResolveInteraction(RoundContext& context, RoundResolutionPlan
 {
 	for (auto& interact : plan.interactions)
 	{
+		AttackData reactorActionData = MakeAttackData
+		(*interact.reactor->actor, interact.reactor->action);
+
+		interact.reactor->actor->StartCooldown
+		(reactorActionData.action, reactorActionData.cooldownTurns);
+
 		switch (interact.result)
 		{
 		case InteractionResult::Success:
 			ResolveSuccessfullInteraction(interact);
 			break;
-
+			
 		case InteractionResult::Failed:
 			ResolveFailedInteraction(interact);
 			break;
@@ -177,13 +181,13 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 	case BattleAction::PowerAttack:
 		data.damageMultiplier = 2.2f;
 		data.hitChanceModifier = -0.2f;
-		data.cooldownTurns = 4;
+		data.cooldownTurns = 5;
 		break;
 
 	case BattleAction::PoisonAttack:
 		data.damageMultiplier = 0.7f;
 		data.hitChanceModifier = -0.05f;
-		data.cooldownTurns = 5;
+		data.cooldownTurns = 6;
 		data.appliedStatus = StatusType::Poison;
 		data.statusTurns = 3;
 		data.statusValue = 0.2f;
@@ -192,10 +196,26 @@ AttackData BattleSystem::MakeAttackData(Character& character, BattleAction actio
 	case BattleAction::StunAttack:
 		data.damageMultiplier = 0.4f;
 		data.hitChanceModifier = -0.15f;
-		data.cooldownTurns = 5;
+		data.cooldownTurns = 6;
 
 		data.appliedStatus = StatusType::Stun;
 		data.statusTurns = 1;
+		break;
+
+	case BattleAction::Guard:
+		data.cooldownTurns = 3;
+		break;
+
+	case BattleAction::Heal:
+		data.cooldownTurns = 3;
+		break;
+
+	case BattleAction::Counter:
+		data.cooldownTurns = 6;
+		break;
+
+	case BattleAction::Parry:
+		data.cooldownTurns = 7;
 		break;
 
 	default:
@@ -393,21 +413,25 @@ void BattleSystem::ApplyAttackStatus(Character& attacker, Character& target, con
 
 void BattleSystem::RevealActions(const RoundContext& context)
 {
-	std::cout << "\n=== Round " << context.roundNumber << " ===\n";
-
-	std::cout << "\n=== ACTION REVEAL ===\n";
+	std::cout
+		<< "------------- ACTION REVEAL ------------\n\n";
 
 	std::cout
+		<< std::left << std::setw(12)
 		<< context.first.actor->GetName()
 		<< " : "
 		<< ToString(context.first.action)
 		<< '\n';
 
 	std::cout
+		<< std::left << std::setw(12)
 		<< context.second.actor->GetName()
 		<< " : "
 		<< ToString(context.second.action)
 		<< '\n';
+
+	std::cout
+		<< "\n----------------------------------------\n";
 }
 
 ActionPhaseStartResult BattleSystem::StartActionPhase(Character& character)
@@ -679,15 +703,15 @@ void BattleSystem::ResolveCounterInteraction(Character& attacker, Character& cou
 		eventBus.Publish(DamagedEvent{ attacker, counter,
 			appliedDamage, DamageType::Direct, isCritical, attackData.action });
 
-	}
 
-	if (counter.IsDead())
-	{
-		eventBus.Publish(DeadEvent{ counter });
-		return;
-	}
+		if (counter.IsDead())
+		{
+			eventBus.Publish(DeadEvent{ counter });
+			return;
+		}
 
-	ApplyAttackStatus(attacker, counter, attackData);
+		ApplyAttackStatus(attacker, counter, attackData);
+	}
 	
 
 	if (!counter.IsDead())
@@ -743,6 +767,56 @@ BattleAction BattleSystem::GetActionByActor(const RoundContext& context, const C
 
 	return BattleAction::None;
 }
+
+bool BattleSystem::CanRoundActionAct(const RoundAction* action, const RoundContext& context, const ActionPhaseStartResult& firstStart, const ActionPhaseStartResult& secondStart)
+{
+	if (action == nullptr)
+		return false;
+
+	if (action == &context.first)
+		return firstStart.canAct;
+
+	if (action == &context.second)
+		return secondStart.canAct;
+
+	return false;
+}
+
+void BattleSystem::ValidateInteractionsForActionPhase(RoundContext& context, RoundResolutionPlan& plan, const ActionPhaseStartResult& firstStart, const ActionPhaseStartResult& secondStart)
+{
+	for (InteractionPlan& interaction : plan.interactions)
+	{
+		const bool reactorCanAct =
+			CanRoundActionAct(
+				interaction.reactor,
+				context,
+				firstStart,
+				secondStart);
+
+		if (!reactorCanAct)
+		{
+			interaction.result = InteractionResult::None;
+			continue;
+		}
+
+		if (interaction.attacker != nullptr)
+		{
+			const bool attackerCanAct =
+				CanRoundActionAct(
+					interaction.attacker,
+					context,
+					firstStart,
+					secondStart);
+
+			if (!attackerCanAct)
+			{
+				interaction.result = InteractionResult::Failed;
+				interaction.attacker = nullptr;
+			}
+		}
+	}
+}
+
 
 std::string BattleSystem::ToString(const BattleAction& action)
 {

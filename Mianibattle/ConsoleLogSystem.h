@@ -21,4 +21,11 @@ private:
 	void OnInteractionFailed(const InteractFailedEvent& event);
 	void OnStatusExpired(const StatusExpiredEvent& event);
 	void OnGuardFailed(const GuardFailedEvent& event);
+
+public:
+	void PrintRoundHeader(int roundNum);
+	void PrintHpBar(const Character& character);
+	void PrintRoundStatus(const Character& player, const Character& enemy);
+	void PrintRoundEndStatus(const Character& player, const Character& enemy);
+	void PrintStatusSummary(const Character& character);
 };

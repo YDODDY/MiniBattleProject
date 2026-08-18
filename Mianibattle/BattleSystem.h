@@ -83,6 +83,9 @@ public:
 	
 	BattleAction GetActionByActor(const RoundContext& context, const Character& actor);
 
+	bool CanRoundActionAct(const RoundAction* action, const RoundContext& context, const ActionPhaseStartResult& firstStart, const ActionPhaseStartResult& secondStart);
+	void ValidateInteractionsForActionPhase(RoundContext& context, RoundResolutionPlan& plan, const ActionPhaseStartResult& firstStart, const ActionPhaseStartResult& secondStart);
+
 private:
 
 	EventBus& eventBus;

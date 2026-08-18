@@ -279,3 +279,102 @@ void ConsoleLogSystem::OnGuardFailed(const GuardFailedEvent& event)
 {
 	std::cout << event.guarder.GetName() << "'s Guard is Failed !\n";
 }
+
+void ConsoleLogSystem::PrintRoundHeader(int roundNum)
+{
+	std::cout
+		<< "\n\n\n"
+		<< "========================================\n"
+		<< "                ROUND " << roundNum << '\n'
+		<< "========================================\n\n";
+}
+
+void ConsoleLogSystem::PrintHpBar(const Character& character)
+{
+	const int barWidth = 20;
+
+	const int currentHp = std::max(0, character.GetHp());
+	const int maxHp = character.GetMaxHp();
+
+	const float hpRatio =
+		static_cast<float>(currentHp) / maxHp;
+
+	const int filled =
+		static_cast<int>(hpRatio * barWidth);
+
+	std::cout << character.GetName() << " [";
+
+	for (int i = 0; i < barWidth; ++i)
+	{
+		if (i < filled)
+			std::cout << '#';
+		else
+			std::cout << '-';
+	}
+
+	std::cout
+		<< "] "
+		<< currentHp
+		<< " / "
+		<< maxHp
+		<< '\n';
+}
+
+void ConsoleLogSystem::PrintRoundStatus(const Character& player, const Character& enemy)
+{
+	std::cout
+    	<< "\n========================================\n"
+		<< "              BATTLE STATUS\n"
+		<< "========================================\n";
+
+	PrintHpBar(player);
+	PrintHpBar(enemy);
+
+	std::cout
+		<< "========================================\n\n";
+}
+
+void ConsoleLogSystem::PrintRoundEndStatus(const Character& player, const Character& enemy)
+{
+	std::cout
+		<< "\n" << "\n"
+		<< "----------------------------------------\n"
+		<< "              ROUND RESULT\n"
+		<< "----------------------------------------\n";
+}
+
+void ConsoleLogSystem::PrintStatusSummary(const Character& character)
+{
+	std::cout << "Status : ";
+
+	bool hasStatus = false;
+
+	if (character.HasStatus(StatusType::Poison))
+	{
+		std::cout << "[Poisoned] ";
+		hasStatus = true;
+	}
+
+	if (character.HasStatus(StatusType::Stun))
+	{
+		std::cout << "[Stunned] ";
+		hasStatus = true;
+	}
+
+	if (character.HasStatus(StatusType::AttackUp))
+	{
+		std::cout << "[Attack Up] ";
+		hasStatus = true;
+	}
+
+	if (character.HasStatus(StatusType::DefenseUp))
+	{
+		std::cout << "[Defense Up] ";
+		hasStatus = true;
+	}
+
+	if (!hasStatus)
+		std::cout << "None";
+
+	std::cout << '\n';
+}
